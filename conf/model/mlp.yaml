@@ -1,0 +1,18 @@
+# @package _global_
+model:
+  _target_: model.mlp.MLP
+
+  in_dim: 784
+  h_dim: 256
+  out_dim: 10
+  dropout: 0.2
+
+loss:
+  _target_: torch.nn.CrossEntropyLoss
+
+optimizer:
+  _target_: torch.optim.Adam
+  lr: 1e-3
+
+loop:
+  _target_: loop.DefaultClassificationLoop

@@ -1,0 +1,39 @@
+defaults:
+  - model: mlp
+  - datamodule: fashion_mnist
+
+
+gpus: 1
+num_workers: 4
+random_seed: 1590258941
+
+
+training:
+  epochs: 100
+  batch_size: 32
+  accumulate_batches: 1
+  # checkpointing
+  save_ckpts: 10
+  monitor: val_loss
+  mode: min
+  patience: 5
+
+testing:
+  log_dir: 'outputs/model.mlp.MLP/2020-11-20/17-44-33'
+  test_best_k: 5
+  batch_size: 512
+
+
+metrics:
+  - _target_: torchmetrics.Accuracy
+  - _target_: torchmetrics.F1
+    num_classes: 10
+
+
+logger:
+  _target_: logger.loggers.WandbMinMaxLogger
+log_gradients: False
+
+hydra:
+  run:
+    dir: ./outputs/${model._target_}/${now:%Y-%m-%d}/${now:%H-%M-%S}
