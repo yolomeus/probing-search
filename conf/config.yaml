@@ -1,10 +1,16 @@
 defaults:
-  - model: mlp
+  - model: probing_pair
   - datamodule: probing
+  - loop: default_loop
 
 gpus: 1
 num_workers: 4
 random_seed: 1590258941
+
+# TODO this will most likely only depend on the model being probed later
+preprocessor:
+  _target_: preprocessor.DummyPreprocessor
+
 
 training:
   epochs: 100
