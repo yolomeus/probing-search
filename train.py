@@ -13,7 +13,12 @@ def train(cfg: DictConfig):
 
     seed_everything(cfg.random_seed)
 
-    training_loop = instantiate(cfg.loop, cfg)
+    model = instantiate(cfg.model)
+    training_loop = instantiate(cfg.loop,
+                                cfg,
+                                model=model,
+                                optimizer={"params": model.parameters()}  # params argument for optimizer constructor
+                                )
 
     train_cfg = cfg.training
     ckpt_path = os.path.join(os.getcwd(), 'checkpoints/')

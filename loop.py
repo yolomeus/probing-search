@@ -1,12 +1,13 @@
 """Training/testing loops specified by pytorch-lightning models. Unlike in standard pytorch-lightning, the loop should
-encapsulate the model instead of being bound to it by inheritance. This way, different models can easily be plugged into
-the same training procedures.
+encapsulate the model instead of being bound to it by inheritance. This way, the same model can be trained with
+multiple different procedures, without having to duplicate model code by subclassing.
 """
 from abc import ABC
 
-from hydra.utils import instantiate
 from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
+from torch.nn import Module
+from torch.optim import Optimizer
 
 from datamodule import DatasetSplit
 from logger.utils import Metrics
@@ -21,23 +22,24 @@ class AbstractBaseLoop(LightningModule, ABC):
         self.save_hyperparameters(hparams)
 
 
-class DefaultClassificationLoop(AbstractBaseLoop, ABC):
+class DefaultClassificationLoop(AbstractBaseLoop):
     """Default wrapper for training/testing a pytorch module using pytorch-lightning. Assumes a standard classification
     task with instance-label pairs (x, y) and a loss function that has the signature loss(y_pred, y_true).
     """
 
-    def __init__(self, hparams: DictConfig):
+    def __init__(self, hparams: DictConfig, model: Module, optimizer: Optimizer, loss: Module):
         """
         :param hparams: contains all hyperparameters.
         """
         super().__init__(hparams)
 
-        self.model = instantiate(hparams.model)
-        self.loss = instantiate(hparams.loss)
+        self.model = model
+        self.loss = loss
+        self.optimizer = optimizer
         self.metrics = Metrics(self.loss, hparams.metrics)
 
     def configure_optimizers(self):
-        return instantiate(self.hparams.optimizer, self.parameters())
+        return self.optimizer
 
     def training_step(self, batch, batch_idx):
         x, y_true = batch
