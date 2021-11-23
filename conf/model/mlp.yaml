@@ -16,3 +16,7 @@ optimizer:
 
 loop:
   _target_: loop.DefaultClassificationLoop
+
+# TODO this will most likely only depend on the model being probed later
+preprocessor:
+  _target_: preprocessor.DummyPreprocessor

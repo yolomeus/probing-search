@@ -1,0 +1,3 @@
+train_file: data/ontonotes/ner/train.json
+dev_file: data/ontonotes/ner/development.json
+test_file: data/ontonotes/ner/test.json

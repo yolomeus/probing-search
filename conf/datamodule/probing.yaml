@@ -1,0 +1,4 @@
+_target_: datamodule.probing_datamodule.ProbingDataModule
+preprocessor: ${preprocessor}
+defaults:
+  - dataset: ontonotes_ner
