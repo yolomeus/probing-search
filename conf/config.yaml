@@ -19,7 +19,7 @@ training:
   patience: 5
 
 testing:
-  log_dir: 'outputs/model.mlp.MLP/2020-11-20/17-44-33'
+  log_dir: 'outputs/'
   test_best_k: 5
   batch_size: 512
 
@@ -34,4 +34,4 @@ log_gradients: False
 
 hydra:
   run:
-    dir: ./outputs/${model._target_}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: outputs/${datamodule.dataset.name}/${model.subject_model._target_}/${now:%Y-%m-%d}/${now:%H-%M-%S}
