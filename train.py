@@ -17,8 +17,8 @@ def train(cfg: DictConfig):
     training_loop = instantiate(cfg.loop,
                                 cfg,
                                 model=model,
-                                optimizer={"params": model.parameters()}  # params argument for optimizer constructor
-                                )
+                                # params argument for optimizer constructor
+                                optimizer={"params": model.parameters()})
 
     train_cfg = cfg.training
     ckpt_path = os.path.join(os.getcwd(), 'checkpoints/')
