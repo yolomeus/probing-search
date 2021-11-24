@@ -1,4 +1,6 @@
-_target_: datamodule.probing_datamodule.ProbingDataModule
-preprocessor: ${preprocessor}
 defaults:
   - dataset: ontonotes_ner
+  - preprocessor: dummy_subject
+
+_target_: datamodule.probing_datamodule.ProbingDataModule
+
