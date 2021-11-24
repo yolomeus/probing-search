@@ -1,0 +1,7 @@
+defaults:
+  # TODO we will replace the dummies with actual models later on
+  - subject_model: dummy_subject
+  - pooler: dummy_pooler
+  - probing_model: dummy_probing
+
+_target_: model.probing_pair.ProbingPair
