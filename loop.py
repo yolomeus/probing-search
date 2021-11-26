@@ -47,7 +47,7 @@ class DefaultClassificationLoop(AbstractBaseLoop):
         loss = self.loss(y_pred, y_true)
 
         self.log('batch_loss', loss)
-        return {'loss': loss, 'y_pred': y_pred, 'y_true': y_true}
+        return {'loss': loss, 'y_pred': y_pred.detach(), 'y_true': y_true.detach()}
 
     def validation_step(self, batch, batch_idx):
         x, y_true = batch
