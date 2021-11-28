@@ -8,6 +8,8 @@ from datamodule import DatasetSplit
 from datamodule.default_datamodule import AbstractDefaultDataModule
 from preprocessor import Preprocessor
 
+SPAN_ONLY_TASKS = ['ner']
+
 
 class ProbingDataModule(AbstractDefaultDataModule):
     """DataModule for datasets in the edge probing format stored as jsonl files.
@@ -17,9 +19,7 @@ class ProbingDataModule(AbstractDefaultDataModule):
         """
 
         :param dataset: config with attributes `train_file`, `dev_file`, `test_file` which are paths to jsonl files.
-        :param preprocessor:
-        :param args:
-        :param kwargs:
+        :param preprocessor: the preprocessor to apply to each instance and use for batch collation.
         """
         super().__init__(*args, **kwargs)
         self._dataset_conf = dataset
@@ -29,15 +29,24 @@ class ProbingDataModule(AbstractDefaultDataModule):
 
     @property
     def train_ds(self):
-        return JSONLDataset(self._dataset_conf.train_file, self._label2id, self._preprocessor)
+        return JSONLDataset(self._dataset_conf.task,
+                            self._dataset_conf.train_file,
+                            self._label2id,
+                            self._preprocessor)
 
     @property
     def val_ds(self):
-        return JSONLDataset(self._dataset_conf.dev_file, self._label2id, self._preprocessor)
+        return JSONLDataset(self._dataset_conf.task,
+                            self._dataset_conf.dev_file,
+                            self._label2id,
+                            self._preprocessor)
 
     @property
     def test_ds(self):
-        return JSONLDataset(self._dataset_conf.test_file, self._label2id, self._preprocessor)
+        return JSONLDataset(self._dataset_conf.task,
+                            self._dataset_conf.test_file,
+                            self._label2id,
+                            self._preprocessor)
 
     @staticmethod
     def read_labels(label_file):
@@ -50,20 +59,41 @@ class JSONLDataset(Dataset):
     """A dataset that reads dict instances from a jsonl file into memory, and applies preprocessing to each instance.
     """
 
-    def __init__(self, filepath, label2id, preprocessor: Preprocessor):
+    def __init__(self, task, filepath, label2id, preprocessor: Preprocessor):
         """
 
+        :param task: name of the task the dataset will be used for.
+        :param label2id: a mapping from string labels to integer ids.
+        :param preprocessor: preprocessor to be applied to each instance.
         :param filepath: path to the jsonl file to load instances from.
         """
+
+        self._task = task
+        self._filepath = filepath
         self._preprocessor = preprocessor
-        with open(to_absolute_path(filepath), 'r') as fp:
-            self.instances = tuple(json.loads(line) for line in fp)
+        self._label2id = label2id
+
+        self.instances = self._init_instances()
+
+    def _init_instances(self):
+        """Read instances, convert labels to integer ids and exclude examples with no targets if needed for task.
+
+        :return: a tuple of edge probing instances.
+        """
+        with open(to_absolute_path(self._filepath), 'r') as fp:
+            instances = tuple(json.loads(line) for line in fp)
+
+        if self._task in SPAN_ONLY_TASKS:
+            # filter out instances with no target spans
+            instances = tuple(filter(lambda x: len(x['targets']) > 0, instances))
 
         # replace label strings with integer ids for training
-        for instance in self.instances:
+        for instance in instances:
             for target in instance['targets']:
                 label_str = target['label']
-                target['label'] = label2id[label_str]
+                target['label'] = self._label2id[label_str]
+
+        return instances
 
     def __getitem__(self, index):
         x = self.instances[index]
