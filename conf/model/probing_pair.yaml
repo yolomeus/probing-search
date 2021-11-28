@@ -1,6 +1,6 @@
 defaults:
-  # TODO we will replace the dummies with actual models later on
-  - subject_model: dummy_subject
+  # TODO replace the dummies with actual models
+  - subject_model: bert_pretrained
   - pooler: dummy_pooler
   - probing_model: dummy_probing
 
