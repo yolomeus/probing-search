@@ -54,6 +54,10 @@ class ProbingDataModule(AbstractDefaultDataModule):
             label2id = {x.rstrip(): i for i, x in enumerate(fp)}
         return label2id
 
+    def build_collate_fn(self, split: DatasetSplit = None):
+        # the preprocessor decides how to collate a batch as it knows what a single instance looks like.
+        return self._preprocessor.collate
+
 
 class JSONLDataset(Dataset):
     """A dataset that reads dict instances from a jsonl file into memory, and applies preprocessing to each instance.
