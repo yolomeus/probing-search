@@ -9,7 +9,6 @@ class ProbingPair(Module):
     def __init__(self, subject_model: Module, pooler: Module, probing_model: Module, freeze_subject=True):
         super().__init__()
         self.subject_model = subject_model
-        # TODO might want to wrap the subject model with the pooler
         self.pooler = pooler
         self.probing_model = probing_model
 
@@ -20,13 +19,19 @@ class ProbingPair(Module):
     def _freeze_model(model: Module):
         """Exclude all parameters of `model` from any gradient updates.
 
-        :param model: freeze all parameters of this model
+        :param model: freeze all parameters of this model.
         """
         for param in model.parameters():
             param.requires_grad = False
 
     def forward(self, inputs):
-        x = self.subject_model(inputs)
-        x = self.pooler(x)
+        """
+        :param inputs: a tuple of subject model inputs, and target spans. The spans are needed for the pooler to select
+        and pool the correct embeddings.
+        """
+
+        x, target_spans = inputs
+        hidden_states = self.subject_model(x)
+        x = self.pooler(hidden_states, target_spans)
         y = self.probing_model(x)
         return y
