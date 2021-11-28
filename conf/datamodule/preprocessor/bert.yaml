@@ -1,0 +1,2 @@
+_target_: preprocessor.BERTPreprocessor
+tokenizer_name: 'bert-base-uncased'
