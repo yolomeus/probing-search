@@ -1,6 +1,6 @@
 defaults:
   - dataset: ontonotes_ner
-  - preprocessor: dummy_subject
+  - preprocessor: bert
 
 _target_: datamodule.probing_datamodule.ProbingDataModule
 
