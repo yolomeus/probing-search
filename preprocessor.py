@@ -32,17 +32,10 @@ class Preprocessor(ABC):
         return self.preprocess(*args, **kwargs)
 
 
-class BERTPreprocessor(Preprocessor):
-    def __init__(self, tokenizer_name):
-        self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
-
-    def preprocess(self, input_text):
-        """
-        :param input_text: the text to be fed into the subject model.
-        :return: the subject model input representation
-        """
-        tokens = self.tokenizer(input_text, truncation=True)
-        return tokens
+class EdgeProbingPreprocessor(Preprocessor, ABC):
+    """Already collates spans and labels from edge probing inputs by flattening them and prepending batch indexes to
+    each span. Needs to overwrite `text_collate` for collating text encodings depending on preprocessing.
+    """
 
     def collate(self, data):
         encodings, spans, labels = zip(*data)
@@ -51,6 +44,30 @@ class BERTPreprocessor(Preprocessor):
                                    for i, target_spans in enumerate(spans)])
         labels = torch.stack(tuple(chain(*labels)))
 
+        batch_enc = self.text_collate(encodings)
+
+        return (batch_enc, span_ids), labels
+
+    @abstractmethod
+    def text_collate(self, encodings):
+        """Build a batch of inputs from multiple text encodings.
+        :param encodings: a list of encoded texts.
+        """
+
+
+class BERTPreprocessor(EdgeProbingPreprocessor):
+    def __init__(self, tokenizer_name):
+        self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
+
+    def preprocess(self, input_text):
+        """
+        :param input_text: the text to be fed into the subject model.
+        :return: the subject model input representation.
+        """
+        tokens = self.tokenizer(input_text, truncation=True)
+        return tokens
+
+    def text_collate(self, encodings):
         batch_enc = BatchEncoding({'input_ids': [],
                                    'token_type_ids': [],
                                    'attention_mask': []})
@@ -61,4 +78,4 @@ class BERTPreprocessor(Preprocessor):
             batch_enc['attention_mask'].append(enc['attention_mask'])
 
         batch_enc = self.tokenizer.pad(batch_enc, return_tensors='pt')
-        return (batch_enc, span_ids), labels
+        return batch_enc
