@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
+from itertools import chain
 
+import numpy as np
+import torch
 from torch.utils.data.dataloader import default_collate
 from transformers import BertTokenizer, BatchEncoding
 
@@ -43,6 +46,10 @@ class BERTPreprocessor(Preprocessor):
 
     def collate(self, data):
         encodings, spans, labels = zip(*data)
+        # prepend batch idx to each span and flatten
+        span_ids = np.concatenate([[(i, *span) for span in target_spans]
+                                   for i, target_spans in enumerate(spans)])
+        labels = torch.stack(tuple(chain(*labels)))
 
         batch_enc = BatchEncoding({'input_ids': [],
                                    'token_type_ids': [],
@@ -54,4 +61,4 @@ class BERTPreprocessor(Preprocessor):
             batch_enc['attention_mask'].append(enc['attention_mask'])
 
         batch_enc = self.tokenizer.pad(batch_enc, return_tensors='pt')
-        return (batch_enc, spans), labels
+        return (batch_enc, span_ids), labels
