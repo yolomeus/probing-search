@@ -1,5 +1,6 @@
 import json
 
+import torch
 from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
@@ -77,10 +78,11 @@ class JSONLDataset(Dataset):
         self._preprocessor = preprocessor
         self._label2id = label2id
 
+        self._one_hot_lookup = torch.eye(len(label2id))
         self.instances = self._init_instances()
 
     def _init_instances(self):
-        """Read instances, convert labels to integer ids and exclude examples with no targets if needed for task.
+        """Read instances, convert labels to one-hot encodings and exclude examples with no targets if needed for task.
 
         :return: a tuple of edge probing instances.
         """
@@ -95,7 +97,8 @@ class JSONLDataset(Dataset):
         for instance in instances:
             for target in instance['targets']:
                 label_str = target['label']
-                target['label'] = self._label2id[label_str]
+                label_id = self._label2id[label_str]
+                target['label'] = self._one_hot_lookup[label_id]
 
         return instances
 
@@ -103,6 +106,7 @@ class JSONLDataset(Dataset):
         x = self.instances[index]
 
         spans, labels = zip(*[(t['span1'], t['label']) for t in x['targets']])
+
         subject_in = self._preprocessor(x['text'])
 
         return subject_in, spans, labels
