@@ -9,8 +9,6 @@ from datamodule import DatasetSplit
 from datamodule.default_datamodule import AbstractDefaultDataModule
 from preprocessor import Preprocessor
 
-SPAN_ONLY_TASKS = ['ner']
-
 
 class ProbingDataModule(AbstractDefaultDataModule):
     """DataModule for datasets in the edge probing format stored as jsonl files.
@@ -89,7 +87,7 @@ class JSONLDataset(Dataset):
         with open(to_absolute_path(self._filepath), 'r') as fp:
             instances = tuple(json.loads(line) for line in fp)
 
-        if self._task in SPAN_ONLY_TASKS:
+        if self._task.requires_target_spans:
             # filter out instances with no target spans
             instances = tuple(filter(lambda x: len(x['targets']) > 0, instances))
 
