@@ -11,6 +11,7 @@ random_seed: 1590258941
 training:
   epochs: 100
   batch_size: 32
+  gradient_clip_val: 5.0
   accumulate_batches: 1
   # checkpointing
   save_ckpts: 10
