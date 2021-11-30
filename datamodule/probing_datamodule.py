@@ -102,10 +102,14 @@ class JSONLDataset(Dataset):
 
     def __getitem__(self, index):
         x = self.instances[index]
-
-        spans, labels = zip(*[(t['span1'], t['label']) for t in x['targets']])
-
         subject_in = self._preprocessor(x['text'])
+
+        if self._task.has_pair_targets:
+            spans1, spans2, labels = zip(*[(t['span1'], t['span2'], t['label'])
+                                           for t in x['targets']])
+            spans = (spans1, spans2)
+        else:
+            spans, labels = zip(*[(t['span1'], t['label']) for t in x['targets']])
 
         return subject_in, spans, labels
 
