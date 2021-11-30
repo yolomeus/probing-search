@@ -7,3 +7,5 @@ train_file: data/ontonotes/ner/train.json
 dev_file: data/ontonotes/ner/development.json
 test_file: data/ontonotes/ner/test.json
 label_file: data/ontonotes/ner/labels.txt
+
+num_classes: 18
