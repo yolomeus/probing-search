@@ -37,16 +37,30 @@ class EdgeProbingPreprocessor(Preprocessor, ABC):
     each span. Needs to overwrite `text_collate` for collating text encodings depending on preprocessing.
     """
 
+    def __init__(self, pair_targets: bool):
+        self.pair_targets = pair_targets
+
     def collate(self, data):
         encodings, spans, labels = zip(*data)
-        # prepend batch idx to each span and flatten
-        span_ids = np.concatenate([[(i, *span) for span in target_spans]
-                                   for i, target_spans in enumerate(spans)])
-        labels = torch.stack(tuple(chain(*labels)))
 
+        # prepend batch idx to each span and flatten
+        if not self.pair_targets:
+            # single span per prediction
+            span_ids = self._spans_to_triples(spans)
+        else:
+            # a pair of spans per prediction
+            spans1, spans2 = zip(*spans)
+            span_ids = self._spans_to_triples(spans1), self._spans_to_triples(spans2)
+
+        labels = torch.stack(tuple(chain(*labels)))
         batch_enc = self.text_collate(encodings)
 
         return (batch_enc, span_ids), labels
+
+    @staticmethod
+    def _spans_to_triples(spans):
+        return np.concatenate([[(i, *span) for span in target_spans]
+                               for i, target_spans in enumerate(spans)])
 
     @abstractmethod
     def text_collate(self, encodings):
@@ -56,7 +70,8 @@ class EdgeProbingPreprocessor(Preprocessor, ABC):
 
 
 class BERTPreprocessor(EdgeProbingPreprocessor):
-    def __init__(self, tokenizer_name):
+    def __init__(self, tokenizer_name, pair_targets: bool):
+        super().__init__(pair_targets)
         self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
 
     def preprocess(self, input_text):
