@@ -1,0 +1,11 @@
+defaults:
+  - task: coref
+
+name: ontonotes_coref
+
+train_file: data/ontonotes/coref/train.json
+dev_file: data/ontonotes/coref/development.json
+test_file: data/ontonotes/coref/test.json
+label_file: data/ontonotes/coref/labels.txt
+
+num_classes: 2
