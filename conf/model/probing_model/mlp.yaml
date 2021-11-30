@@ -2,7 +2,6 @@ _target_: model.probing.mlp.MLP
 
 input_dim: ${model.pooler.hidden_dim}
 hidden_dim: 512
-# TODO ${task.n_classes}
-output_dim: 18
+output_dim: ${datamodule.dataset.num_classes}
 dropout: 0.2
 pair_targets: ${datamodule.dataset.task.has_pair_targets}
