@@ -5,3 +5,4 @@ hidden_dim: 512
 # TODO ${task.n_classes}
 output_dim: 18
 dropout: 0.2
+pair_targets: ${datamodule.dataset.task.has_pair_targets}

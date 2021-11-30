@@ -7,8 +7,12 @@ class MLP(Module):
     https://github.com/nyu-mll/jiant/blob/ead63af002e0f755c6418478ec3cabb4062a601e/jiant/modules/simple_modules.py#L49
     """
 
-    def __init__(self, input_dim, hidden_dim, output_dim, dropout):
+    def __init__(self, input_dim, hidden_dim, output_dim, dropout, pair_targets):
         super().__init__()
+
+        if pair_targets:
+            input_dim *= 2
+
         self.classifier = Sequential(
             Linear(input_dim, hidden_dim),
             Tanh(),
