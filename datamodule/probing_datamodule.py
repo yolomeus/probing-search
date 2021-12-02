@@ -117,3 +117,42 @@ class JSONLDataset(Dataset):
 
     def __len__(self):
         return len(self.instances)
+
+
+class CachedJSONLDataset(JSONLDataset):
+    """A cached version of the JSONLDataset where, during the 1st access, each item is written to a pickle file and
+    read from disk afterwards.
+    """
+
+    def __init__(self, task, filepath, label2id, preprocessor: Preprocessor):
+        super().__init__(task, filepath, label2id, preprocessor)
+
+        self.cache_dir = os.path.join('./.cache', self._filepath.split('.')[0])
+        self.cache_dir = to_absolute_path(self.cache_dir)
+        os.makedirs(self.cache_dir, exist_ok=True)
+
+    def __getitem__(self, index):
+        path = os.path.join(self.cache_dir, f'{index}.pkl')
+        was_cached = os.path.exists(path)
+        if was_cached:
+            return self.uncache_item(path)
+
+        item = super().__getitem__(index)
+        if not was_cached:
+            self.cache_item(item, path)
+
+        return item
+
+    @staticmethod
+    def cache_item(item, path):
+        """write item to pickle file.
+        """
+        with open(path, 'wb') as fp:
+            pickle.dump(item, fp)
+
+    @staticmethod
+    def uncache_item(path):
+        """Read item from pickle file.
+        """
+        with open(path, 'rb') as fp:
+            return pickle.load(fp)
