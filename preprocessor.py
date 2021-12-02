@@ -12,9 +12,10 @@ class Preprocessor(ABC):
     """
 
     @abstractmethod
-    def preprocess(self, input_text):
+    def preprocess(self, input_text, spans):
         """Preprocess input_text in such a way, that a subject model will accept it.
 
+        :param spans: the target spans to adjust for the new tokenization if necessary.
         :param input_text: the input text that will be fed to a subject model.
         :return: the preprocessed text.
         """
@@ -74,13 +75,46 @@ class BERTPreprocessor(EdgeProbingPreprocessor):
         super().__init__(pair_targets)
         self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
 
-    def preprocess(self, input_text):
+    def preprocess(self, input_text, spans):
         """
+        :param spans: target spans from original tokenization
         :param input_text: the text to be fed into the subject model.
         :return: the subject model input representation.
         """
-        tokens = self.tokenizer(input_text, truncation=True)
-        return tokens
+
+        if self.pair_targets:
+            new_spans1 = self._retokenize_spans(input_text, spans[0])
+            new_spans2 = self._retokenize_spans(input_text, spans[1])
+            new_spans = (new_spans1, new_spans2)
+        else:
+            new_spans = self._retokenize_spans(input_text, spans)
+
+        tokens_full = self.tokenizer(input_text, truncation=True)
+        return tokens_full, new_spans
+
+    def _retokenize_spans(self, original_text, spans):
+        """Given a list of original tokens and spans, recompute new spans for the wordpiece tokenizer.
+        
+        :param original_text: the original text, where tokens are separated by whitespace.
+        :param spans: the original spans w.r.t. the original tokens.
+        :return: 
+        """
+
+        vanilla_tokens = original_text.split()
+        left_spans = [' '.join(vanilla_tokens[:a]) for a, _ in spans]
+        original_spans = [' '.join(vanilla_tokens[a:b]) for a, b in spans]
+
+        left_retokenized = [self.tokenizer(left_span,
+                                           add_special_tokens=False)['input_ids']
+                            for left_span in left_spans]
+        span_retokenized = [self.tokenizer(span,
+                                           add_special_tokens=False)['input_ids']
+                            for span in original_spans]
+
+        # shift 1 by one to account for the [cls] token in the beginning
+        new_spans = [(1 + len(a), 1 + len(a) + len(b))
+                     for a, b in zip(left_retokenized, span_retokenized)]
+        return new_spans
 
     def text_collate(self, encodings):
         batch_enc = BatchEncoding({'input_ids': [],

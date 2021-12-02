@@ -1,4 +1,6 @@
 import json
+import os.path
+import pickle
 
 import torch
 from hydra.utils import to_absolute_path
@@ -102,7 +104,6 @@ class JSONLDataset(Dataset):
 
     def __getitem__(self, index):
         x = self.instances[index]
-        subject_in = self._preprocessor(x['text'])
 
         if self._task.has_pair_targets:
             spans1, spans2, labels = zip(*[(t['span1'], t['span2'], t['label'])
@@ -111,7 +112,8 @@ class JSONLDataset(Dataset):
         else:
             spans, labels = zip(*[(t['span1'], t['label']) for t in x['targets']])
 
-        return subject_in, spans, labels
+        subject_in, new_spans = self._preprocessor(x['text'], spans)
+        return subject_in, new_spans, labels
 
     def __len__(self):
         return len(self.instances)
