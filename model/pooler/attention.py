@@ -6,9 +6,12 @@ class AttentionPooler(Module):
     """Attention pooling as described in https://arxiv.org/pdf/1905.06316.pdf (page 14, C).
     """
 
-    def __init__(self, input_dim, hidden_dim, layer_to_probe):
+    def __init__(self, input_dim, hidden_dim, layer_to_probe, pair_targets):
         super().__init__()
+
         self.layer_to_probe = layer_to_probe
+        self.pair_targets = pair_targets
+
         self.in_projections = ModuleList([Linear(input_dim, hidden_dim),
                                           Linear(input_dim, hidden_dim)])
         self.attention_scorers = ModuleList([Linear(hidden_dim, 1, bias=False),
@@ -23,14 +26,12 @@ class AttentionPooler(Module):
         :return: a tensor of pooled span embeddings of dimension `hidden_dim` or 2 * `hidden_dim` for pair tasks.
         """
 
-        is_span_pair = len(target_spans) == 2 and isinstance(target_spans, list)
-        if is_span_pair:
+        if self.pair_targets:
             pooled_span1 = self._single_span_pool(hidden_states, target_spans[0], 0)
             pooled_span2 = self._single_span_pool(hidden_states, target_spans[1], 1)
 
             return torch.cat([pooled_span1, pooled_span2], dim=1)
 
-        # pooling over a single span
         return self._single_span_pool(hidden_states, target_spans, 0)
 
     def _single_span_pool(self, hidden_states, target_spans, k):
