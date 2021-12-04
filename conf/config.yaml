@@ -10,25 +10,24 @@ random_seed: 1590258941
 continue_from_checkpoint: null
 
 training:
-  epochs: 100
+  epochs: 30
   batch_size: 32
   gradient_clip_val: 5.0
   accumulate_batches: 1
   # checkpointing
-  save_ckpts: 10
-  monitor: val_loss
+  save_ckpts: 1
+  monitor: val/loss
   mode: min
   patience: 5
 
 testing:
   log_dir: 'outputs/'
   test_best_k: 5
-  batch_size: 512
+  batch_size: 32
 
 metrics:
-  - _target_: torchmetrics.Accuracy
   - _target_: torchmetrics.F1
-    num_classes: 10
+    average: 'micro'
 
 logger:
   _target_: logger.loggers.WandbMinMaxLogger
@@ -36,4 +35,13 @@ log_gradients: False
 
 hydra:
   run:
-    dir: outputs/${datamodule.dataset.name}/${model.subject_model._target_}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: outputs/single/${datamodule.dataset.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+  sweep:
+    dir: outputs/sweep/${datamodule.dataset.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: 'layer=${model.pooler.layer_to_probe}'
+    # ${hydra.job.num}
+
+tags:
+  - 'layer:${model.pooler.layer_to_probe}'
+  - ${datamodule.dataset.name}
