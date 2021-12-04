@@ -11,6 +11,8 @@ class WandbMinMaxLogger(WandbLogger):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._bounds_dict = {}
+        with open('./run_id.txt', 'w') as fp:
+            fp.write(self.experiment.id)
 
     @rank_zero_only
     def log_metrics(self, metrics, step):

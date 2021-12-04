@@ -7,6 +7,7 @@ defaults:
 gpus: 1
 num_workers: 4
 random_seed: 1590258941
+continue_from_checkpoint: null
 
 training:
   epochs: 100
