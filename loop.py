@@ -36,7 +36,7 @@ class DefaultClassificationLoop(AbstractBaseLoop):
         self.model = model
         self.loss = loss
         self.optimizer = optimizer
-        self.metrics = Metrics(self.loss, hparams.metrics)
+        self.metrics = Metrics(self.loss, hparams.metrics.metrics_list, hparams.metrics.to_probabilities)
 
     def configure_optimizers(self):
         return self.optimizer

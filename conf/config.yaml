@@ -26,11 +26,15 @@ testing:
   batch_size: 32
 
 metrics:
-  - _target_: torchmetrics.F1
-    average: 'micro'
+  to_probabilities: 'sigmoid'
+  metrics_list:
+    - _target_: torchmetrics.F1
+      average: 'micro'
 
 logger:
   _target_: logger.loggers.WandbMinMaxLogger
+  project: probing-search
+
 log_gradients: False
 
 hydra:
