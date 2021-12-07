@@ -1,7 +1,7 @@
 defaults:
+  # sub-configs to include by default
   - model: probing_pair
   - datamodule: probing
-  #  - datamodule/preprocessor: ${model/subject_model}
   - loop: default_loop
 
 gpus: 1
@@ -14,7 +14,7 @@ training:
   batch_size: 32
   gradient_clip_val: 5.0
   accumulate_batches: 1
-  # checkpointing
+  # checkpointing and early stopping
   save_ckpts: 1
   monitor: val/loss
   mode: min
@@ -31,12 +31,16 @@ metrics:
     - _target_: torchmetrics.F1
       average: 'micro'
 
-logger:
+log_gradients: False
+logger: # set to null to use PL default logging
   _target_: logger.loggers.WandbMinMaxLogger
   project: probing-search
 
-log_gradients: False
+tags:
+  - 'layer:${model.pooler.layer_to_probe}'
+  - ${datamodule.dataset.name}
 
+# set output directories
 hydra:
   run:
     dir: outputs/single/${datamodule.dataset.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
@@ -44,8 +48,5 @@ hydra:
   sweep:
     dir: outputs/sweep/${datamodule.dataset.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: 'layer=${model.pooler.layer_to_probe}'
-    # ${hydra.job.num}
+  # ${hydra.job.num}
 
-tags:
-  - 'layer:${model.pooler.layer_to_probe}'
-  - ${datamodule.dataset.name}
