@@ -31,6 +31,7 @@ def new_training(cfg: DictConfig):
     """
     trainer, datamodule, training_loop = instantiate_training(cfg)
     trainer.fit(training_loop, datamodule=datamodule)
+    trainer.test(datamodule=datamodule, ckpt_path='best')
 
 
 def continue_training(ckpt_path):
@@ -53,6 +54,7 @@ def continue_training(ckpt_path):
 
     trainer, datamodule, loop = instantiate_training(ckpt_conf, id=run_id, resume='must')
     trainer.fit(loop, datamodule=datamodule, ckpt_path=ckpt_path)
+    trainer.test(datamodule=datamodule, ckpt_path='best')
 
 
 def instantiate_training(cfg: DictConfig, **logger_kwargs):
@@ -69,7 +71,7 @@ def instantiate_training(cfg: DictConfig, **logger_kwargs):
                                 cfg,
                                 model=model,
                                 # params argument for optimizer constructor
-                                optimizer={"params": model.parameters()})
+                                optimizer={'params': model.parameters()})
 
     # create callbacks
     ckpt_path = os.path.join(os.getcwd(), 'checkpoints/')
