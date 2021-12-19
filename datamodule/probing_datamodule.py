@@ -1,5 +1,5 @@
 import json
-import os.path
+import os
 import pickle
 
 import torch
@@ -78,8 +78,18 @@ class JSONLDataset(Dataset):
         self._preprocessor = preprocessor
         self._label2id = label2id
 
-        self._one_hot_lookup = torch.eye(len(label2id))
         self.instances = self._init_instances()
+
+    def __getitem__(self, index):
+        x = self.instances[index]
+
+        spans, labels = self._unpack_inputs(x)
+        subject_in, new_spans = self._preprocessor(x['text'], spans)
+
+        return subject_in, new_spans, labels
+
+    def __len__(self):
+        return len(self.instances)
 
     def _init_instances(self):
         """Read instances, convert labels to one-hot encodings and exclude examples with no targets if needed for task.
@@ -93,18 +103,22 @@ class JSONLDataset(Dataset):
             # filter out instances with no target spans
             instances = tuple(filter(lambda x: len(x['targets']) > 0, instances))
 
-        # replace label strings with integer ids for training
+        # replace label strings with one-hot encoding of integer ids for training
+        one_hot_lookup = torch.eye(len(self._label2id))
         for instance in instances:
             for target in instance['targets']:
                 label_str = target['label']
                 label_id = self._label2id[label_str]
-                target['label'] = self._one_hot_lookup[label_id]
+                target['label'] = one_hot_lookup[label_id]
 
         return instances
 
-    def __getitem__(self, index):
-        x = self.instances[index]
+    def _unpack_inputs(self, x):
+        """Unpack spans ans labels from an edge probing instance.
 
+        :param x: the edge probing dict to unpack.
+        :return: a tuple of (spans, labels), where spans is a pair of spans in case of span targets.
+        """
         if self._task.has_pair_targets:
             spans1, spans2, labels = zip(*[(t['span1'], t['span2'], t['label'])
                                            for t in x['targets']])
@@ -112,11 +126,7 @@ class JSONLDataset(Dataset):
         else:
             spans, labels = zip(*[(t['span1'], t['label']) for t in x['targets']])
 
-        subject_in, new_spans = self._preprocessor(x['text'], spans)
-        return subject_in, new_spans, labels
-
-    def __len__(self):
-        return len(self.instances)
+        return spans, labels
 
 
 class CachedJSONLDataset(JSONLDataset):
