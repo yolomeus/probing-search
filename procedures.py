@@ -22,9 +22,9 @@ class BaseTraining(ABC):
         self.datamodule = self.build_datamodule()
         self.loop = self.build_loop()
 
-        logger = self.build_logger(self.loop)
+        self.logger = self.build_logger(self.loop)
         callbacks = self.build_callbacks()
-        self.trainer = self.build_trainer(logger, callbacks)
+        self.trainer = self.build_trainer(self.logger, callbacks)
 
     @abstractmethod
     def run(self):
