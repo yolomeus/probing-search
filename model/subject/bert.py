@@ -1,5 +1,6 @@
 from torch.nn import Module
 from transformers import BertModel
+from transformers.utils import logging
 
 
 class BERTPretrained(Module):
@@ -13,7 +14,9 @@ class BERTPretrained(Module):
         :param model_name: huggingface model name or path to model checkpoint file
         """
         super().__init__()
+        logging.set_verbosity_error()
         self.bert = BertModel.from_pretrained(model_name)
+        logging.set_verbosity_warning()
 
     def forward(self, inputs):
         outputs = self.bert.forward(**inputs, output_hidden_states=True)
