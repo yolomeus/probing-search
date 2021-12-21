@@ -2,7 +2,7 @@ import hydra
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything
 
-from procedures import DefaultTraining
+from procedures import MDLProbeTraining
 
 
 @hydra.main(config_path='conf', config_name='config')
@@ -11,7 +11,7 @@ def train(cfg: DictConfig):
 
     seed_everything(cfg.random_seed, workers=True)
 
-    training = DefaultTraining(cfg)
+    training = MDLProbeTraining(cfg)
     training.run()
 
 
