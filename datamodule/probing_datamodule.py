@@ -16,13 +16,27 @@ class ProbingDataModule(AbstractDefaultDataModule):
     """DataModule for datasets in the edge probing format stored as jsonl files.
     """
 
-    def __init__(self, dataset: DictConfig, preprocessor: Preprocessor, *args, **kwargs):
+    def __init__(
+            self,
+            dataset: DictConfig,
+            preprocessor: Preprocessor,
+            train_conf,
+            test_conf,
+            num_workers,
+            pin_memory
+    ):
         """
 
         :param dataset: config with attributes `train_file`, `dev_file`, `test_file` which are paths to jsonl files.
         :param preprocessor: the preprocessor to apply to each instance and use for batch collation.
+
+        :param train_conf: global training configuration
+        :param test_conf: global test configuration
+        :param num_workers: num_workers argument passed to all DataLoaders.
+        :param pin_memory: pin_memory argument passed to all DataLoaders.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(train_conf, test_conf, num_workers, pin_memory)
+
         self._dataset_conf = dataset
         self._preprocessor = preprocessor
 
@@ -30,24 +44,30 @@ class ProbingDataModule(AbstractDefaultDataModule):
 
     @property
     def train_ds(self):
-        return JSONLDataset(self._dataset_conf.task,
-                            self._dataset_conf.train_file,
-                            self._label2id,
-                            self._preprocessor)
+        return JSONLDataset(
+            self._dataset_conf.task,
+            self._dataset_conf.train_file,
+            self._label2id,
+            self._preprocessor
+        )
 
     @property
     def val_ds(self):
-        return JSONLDataset(self._dataset_conf.task,
-                            self._dataset_conf.dev_file,
-                            self._label2id,
-                            self._preprocessor)
+        return JSONLDataset(
+            self._dataset_conf.task,
+            self._dataset_conf.dev_file,
+            self._label2id,
+            self._preprocessor
+        )
 
     @property
     def test_ds(self):
-        return JSONLDataset(self._dataset_conf.task,
-                            self._dataset_conf.test_file,
-                            self._label2id,
-                            self._preprocessor)
+        return JSONLDataset(
+            self._dataset_conf.task,
+            self._dataset_conf.test_file,
+            self._label2id,
+            self._preprocessor
+        )
 
     @staticmethod
     def read_labels(label_file):
