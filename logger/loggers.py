@@ -8,20 +8,26 @@ class WandbMinMaxLogger(WandbLogger):
     """Extension of the WandbLogger that tracks minimum and maximum of all metrics over time.
     """
 
-    def __init__(self, *args, **kwargs):
+    LOGGER_JOIN_CHAR = '/'
+
+    def __init__(self, postfix='', *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self._postfix = postfix
         self._bounds_dict = {}
-        with open('./run_id.txt', 'w') as fp:
-            fp.write(self.experiment.id)
 
     @rank_zero_only
-    def log_metrics(self, metrics, step):
+    def log_metrics(self, metrics, step=None):
         """Extends log_metrics with updating the wandb summary with maximum and minimum of each metric over time.
 
         :param metrics: mapping from metric names to values.
         :param step: step at which the metric was measured.
         """
+        metrics = {k + self._postfix if k != 'epoch' else k: v
+                   for k, v in metrics.items()}
+
         super().log_metrics(metrics, step)
+
         for metric, value in metrics.items():
             self._update_bounds(metric, value)
         self._log_bounds()
@@ -71,10 +77,10 @@ class WandbMinMaxLogger(WandbLogger):
         def min_name(self):
             """Name for the minimum value of this metric.
             """
-            return 'min_' + self.name
+            return self.name + WandbMinMaxLogger.LOGGER_JOIN_CHAR + 'min'
 
         @property
         def max_name(self):
             """Name for the maximum value of this metric.
             """
-            return 'max_' + self.name
+            return self.name + WandbMinMaxLogger.LOGGER_JOIN_CHAR + 'max'
