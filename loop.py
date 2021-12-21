@@ -57,3 +57,8 @@ class DefaultClassificationLoop(AbstractBaseLoop):
         x, y_true = batch
         y_pred = self.model(x)
         self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.TEST)
+
+    def predict_step(self, batch, batch_idx, dataloader_idx=None):
+        x, y_true = batch
+        y_pred = self.model(x)
+        return y_pred, y_true
