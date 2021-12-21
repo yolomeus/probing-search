@@ -14,14 +14,21 @@ from datamodule.probing_datamodule import MDLProbingDataModule
 from metrics import MDL, Compression
 
 
-class BaseTraining(ABC):
+class Procedure(ABC):
     """Base class for setting up and running training procedures.
     """
 
+    @abstractmethod
+    def run(self):
+        """Override to specify the training procedure.
+        """
+
+
+class DefaultTraining(Procedure):
+    """Default training setup for a single dataset training run.
+    """
+
     def __init__(self, cfg: DictConfig):
-        """
-        :param cfg: the full training configuration.
-        """
         self.cfg = cfg
 
         self.datamodule = self.build_datamodule()
@@ -30,39 +37,6 @@ class BaseTraining(ABC):
         self.logger = self.build_logger(self.loop)
         callbacks = self.build_callbacks()
         self.trainer = self.build_trainer(self.logger, callbacks)
-
-    @abstractmethod
-    def run(self):
-        """Override to specify the training procedure.
-        """
-
-    @abstractmethod
-    def build_trainer(self, logger, callbacks):
-        pass
-
-    @abstractmethod
-    def build_loop(self):
-        pass
-
-    @abstractmethod
-    def build_datamodule(self):
-        pass
-
-    @abstractmethod
-    def build_callbacks(self):
-        pass
-
-    @abstractmethod
-    def build_logger(self, model):
-        pass
-
-
-class DefaultTraining(BaseTraining):
-    """Default training setup for a single dataset training run.
-    """
-
-    def __init__(self, cfg: DictConfig):
-        super().__init__(cfg)
 
     def run(self):
         self.trainer.fit(self.loop, datamodule=self.datamodule)
