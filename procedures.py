@@ -10,7 +10,13 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 
 class BaseTraining(ABC):
+    """Base class for setting up and running training procedures.
+    """
+
     def __init__(self, cfg: DictConfig):
+        """
+        :param cfg: the full training configuration.
+        """
         self.cfg = cfg
 
         self.datamodule = self.build_datamodule()
@@ -22,8 +28,7 @@ class BaseTraining(ABC):
 
     @abstractmethod
     def run(self):
-        """Run the training procedure.
-        :return:
+        """Override to specify the training procedure.
         """
 
     @abstractmethod
