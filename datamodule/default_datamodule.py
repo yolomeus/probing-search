@@ -1,7 +1,9 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
+from typing import List
 
+import torch
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Subset
 
 from datamodule import DatasetSplit
 
@@ -98,3 +100,84 @@ class AbstractDefaultDataModule(LightningDataModule):
         """
 
         return None
+
+
+class MultiPortionMixin(AbstractDefaultDataModule, ABC):
+    """DataModule for training on different portions, i.e. subsets of the train dataset. Can be used as Mixin to
+    provide multi-portion functionality to a subclass of AbstractDefaultDataModule.
+    """
+
+    def __init__(self, portions: List, shuffle_first: bool = True, *args, **kwargs):
+        """
+
+         :param portions: A list of percentages which specify the size of each training portion to iterate over.
+        :param shuffle_first: whether to shuffle the training set before dividing into portions.
+        :param args: args passed to the parent class constructor.
+        :param kwargs: kwargs passed to the parent class constructor.
+        """
+        super().__init__(*args, **kwargs)
+
+        self.portion_idx = None
+        self.portions = portions
+
+        self._shuffle_first = shuffle_first
+        self._training_ids = None
+
+        self.setup()
+
+    def setup(self, stage=None):
+        self._training_ids = self._init_training_ids()
+
+    def _init_training_ids(self):
+        n_train = len(self.train_ds)
+        training_ids = torch.randperm(n_train) if self._shuffle_first else torch.arange(n_train)
+        self.portion_idx = 0
+        return training_ids
+
+    def next_portion(self):
+        """Change internal state to the next portion (as defined in `portions`), such that train_dataloader will return
+        only the current portion of the train dataset.
+        """
+        if self.portion_idx < len(self.portions) - 1:
+            self.portion_idx += 1
+        else:
+            raise OverflowError('already reached last portion')
+
+    def train_dataloader(self):
+        ds = self.train_ds
+        if self.portion_idx is not None:
+            ds = self._train_portion(ds)
+
+        return DataLoader(
+            ds,
+            self._train_conf.batch_size,
+            shuffle=True,
+            num_workers=self._num_workers,
+            pin_memory=self._pin_memory,
+            collate_fn=self.build_collate_fn(DatasetSplit.TRAIN),
+            persistent_workers=self._persistent_workers
+        )
+
+    def _train_portion(self, ds):
+        k = int(len(self._training_ids) * self.portions[self.portion_idx])
+        return Subset(ds, indices=self._training_ids[:k])
+
+    def portion_size(self, i):
+        """Compute number of instances in the i-th portion in `portions`.
+
+        :param i: portion to get the number of instances of.
+        :return: number of instances in potion i.
+        """
+        return int(self.portions[i] * len(self.train_ds))
+
+    @property
+    def current_portion_size(self):
+        """Number of instances in the currently selected portion.
+        """
+        return self.portion_size(self.portion_idx)
+
+    @property
+    def current_portion_percentage(self):
+        """Current portion size as percentage.
+        """
+        return self.portions[self.portion_idx]
