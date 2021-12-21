@@ -1,7 +1,7 @@
 defaults:
   # sub-configs to include by default
   - model: probing_pair
-  - datamodule: probing
+  - datamodule: mdl_probing
   - loop: default_loop
 
 gpus: 1

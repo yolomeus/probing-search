@@ -1,0 +1,7 @@
+# extend the probing configuration
+defaults:
+  - probing
+
+_target_: datamodule.probing_datamodule.MDLProbingDataModule
+portions: [ 0.001, 0.002, 0.004, 0.008, 0.016, 0.032, 0.0625, 0.125, 0.25, 0.5, 1.0 ]
+shuffle_first: True
