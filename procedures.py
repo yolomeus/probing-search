@@ -53,9 +53,11 @@ class BaseTraining(ABC):
 
 
 class DefaultTraining(BaseTraining):
+    """Default training setup for a single dataset training run.
+    """
+
     def __init__(self, cfg: DictConfig):
         super().__init__(cfg)
-        self.cfg = cfg
 
     def run(self):
         self.trainer.fit(self.loop, datamodule=self.datamodule)
