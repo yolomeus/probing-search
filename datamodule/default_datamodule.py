@@ -123,8 +123,6 @@ class MultiPortionMixin(AbstractDefaultDataModule, ABC):
         self._shuffle_first = shuffle_first
         self._training_ids = None
 
-        self.setup()
-
     def setup(self, stage=None):
         self._training_ids = self._init_training_ids()
 
