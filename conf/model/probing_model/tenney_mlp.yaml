@@ -1,4 +1,4 @@
-_target_: model.probing.mlp.MLP
+_target_: model.probing.mlp.TenneyMLP
 
 input_dim: ${model.pooler.hidden_dim}
 hidden_dim: 512
