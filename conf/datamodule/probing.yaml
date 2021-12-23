@@ -3,4 +3,4 @@ defaults:
   - preprocessor: bert
 
 _target_: datamodule.probing_datamodule.ProbingDataModule
-
+labels_to_onehot: False

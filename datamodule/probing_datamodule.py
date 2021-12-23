@@ -21,6 +21,7 @@ class ProbingDataModule(AbstractDefaultDataModule):
             self,
             dataset: DictConfig,
             preprocessor: Preprocessor,
+            labels_to_onehot: bool,
             train_conf,
             test_conf,
             num_workers,
@@ -41,6 +42,7 @@ class ProbingDataModule(AbstractDefaultDataModule):
         self._dataset_conf = dataset
         self._preprocessor = preprocessor
 
+        self._labels_to_onehot = labels_to_onehot
         self._label2id = self.read_labels(self._dataset_conf.label_file)
 
     @property
@@ -49,7 +51,8 @@ class ProbingDataModule(AbstractDefaultDataModule):
             self._dataset_conf.task,
             self._dataset_conf.train_file,
             self._label2id,
-            self._preprocessor
+            self._preprocessor,
+            self._labels_to_onehot
         )
 
     @property
@@ -58,7 +61,8 @@ class ProbingDataModule(AbstractDefaultDataModule):
             self._dataset_conf.task,
             self._dataset_conf.dev_file,
             self._label2id,
-            self._preprocessor
+            self._preprocessor,
+            self._labels_to_onehot
         )
 
     @property
@@ -67,7 +71,8 @@ class ProbingDataModule(AbstractDefaultDataModule):
             self._dataset_conf.task,
             self._dataset_conf.test_file,
             self._label2id,
-            self._preprocessor
+            self._preprocessor,
+            self._labels_to_onehot
         )
 
     @staticmethod
@@ -92,6 +97,7 @@ class MDLProbingDataModule(MultiPortionMixin, ProbingDataModule):
             shuffle_first: bool,
             dataset,
             preprocessor,
+            labels_to_onehot: bool,
             train_conf,
             test_conf,
             num_workers,
@@ -115,6 +121,7 @@ class MDLProbingDataModule(MultiPortionMixin, ProbingDataModule):
             shuffle_first,
             dataset,
             preprocessor,
+            labels_to_onehot,
             train_conf,
             test_conf,
             num_workers,
@@ -128,8 +135,7 @@ class MDLProbingDataModule(MultiPortionMixin, ProbingDataModule):
             shuffle=False,
             num_workers=self._num_workers,
             pin_memory=self._pin_memory,
-            collate_fn=self.build_collate_fn(DatasetSplit.TRAIN),
-            persistent_workers=True
+            collate_fn=self.build_collate_fn(DatasetSplit.TRAIN)
         )
         return pred_dl
 
@@ -159,7 +165,7 @@ class JSONLDataset(Dataset):
     """A dataset that reads dict instances from a jsonl file into memory, and applies preprocessing to each instance.
     """
 
-    def __init__(self, task, filepath, label2id, preprocessor: Preprocessor):
+    def __init__(self, task, filepath, label2id, preprocessor: Preprocessor, labels_to_onehot):
         """
 
         :param task: name of the task the dataset will be used for.
@@ -171,6 +177,7 @@ class JSONLDataset(Dataset):
         self._task = task
         self._filepath = filepath
         self._preprocessor = preprocessor
+        self._labels_to_onehot = labels_to_onehot
         self._label2id = label2id
 
         self.instances = self._init_instances()
@@ -181,7 +188,7 @@ class JSONLDataset(Dataset):
         spans, labels = self._unpack_inputs(x)
         subject_in, new_spans = self._preprocessor(x['text'], spans)
 
-        return subject_in, new_spans, labels
+        return subject_in, new_spans, torch.as_tensor(labels)
 
     def __len__(self):
         return len(self.instances)
@@ -204,7 +211,10 @@ class JSONLDataset(Dataset):
             for target in instance['targets']:
                 label_str = target['label']
                 label_id = self._label2id[label_str]
-                target['label'] = one_hot_lookup[label_id]
+                if self._labels_to_onehot:
+                    target['label'] = one_hot_lookup[label_id]
+                else:
+                    target['label'] = label_id
 
         return instances
 
@@ -229,8 +239,8 @@ class CachedJSONLDataset(JSONLDataset):
     read from disk afterwards.
     """
 
-    def __init__(self, task, filepath, label2id, preprocessor: Preprocessor):
-        super().__init__(task, filepath, label2id, preprocessor)
+    def __init__(self, task, filepath, label2id, preprocessor: Preprocessor, labels_to_onehot):
+        super().__init__(task, filepath, label2id, preprocessor, labels_to_onehot)
 
         self.cache_dir = os.path.join('./.cache', self._filepath.split('.')[0])
         self.cache_dir = to_absolute_path(self.cache_dir)
