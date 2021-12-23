@@ -25,7 +25,7 @@ class MDL(Metric):
         :param portion_idx: index of the current online portion for which `preds` are passed.
         :param first_portion_size: number of targets in the first training portion
         """
-        self.losses[portion_idx] += F.binary_cross_entropy_with_logits(preds, target, reduction='sum')
+        self.losses[portion_idx] += F.cross_entropy(preds, target, reduction='sum')
 
         if self.first_portion_size is None:
             self.first_portion_size = first_portion_size
