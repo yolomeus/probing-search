@@ -28,7 +28,7 @@ class BaseTraining(Procedure, ABC):
     """
 
     def __init__(self, cfg: DictConfig):
-        self.log = logging.getLogger(str(self.__class__))
+        self.log = logging.getLogger('.'.join([self.__module__, self.__class__.__name__]))
         self.cfg = cfg
 
     def build_trainer(self, logger):
@@ -141,7 +141,8 @@ class MDLOnlineCoding(BaseTraining):
     def run(self):
         self.log.info('Performing multi-portion training')
         self._run_online_coding()
-        self._compute_metrics()
+        mdl, compression = self._compute_metrics()
+        self.logger.log_metrics({'mdl': mdl, 'compression': compression})
 
     def _run_online_coding(self):
         """Run the online-coding procedure to compute mdl and compression. For this we train on multiple portions of the
@@ -167,6 +168,7 @@ class MDLOnlineCoding(BaseTraining):
             trainer.fit(loop, datamodule)
 
             self._update_mdl(trainer, loop, i)
+            self.datamodule.next_portion()
 
             # cleanup prevents a multiprocessing issue where already closed handles are closed again
             del loop
