@@ -91,7 +91,7 @@ class BaseTraining(Procedure, ABC):
 
     def build_logger(self, model, **kwargs):
         if self.cfg.logger is not None:
-            logger = instantiate(self.cfg.logger, tags=list(self.cfg.tags), **kwargs)
+            logger = instantiate(self.cfg.logger, **kwargs)
             if self.cfg.log_gradients:
                 logger.experiment.watch(model)
             return logger
