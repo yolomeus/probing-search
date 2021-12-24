@@ -168,7 +168,9 @@ class MDLOnlineCoding(BaseTraining):
 
             self._update_mdl(trainer, loop, i)
 
-            datamodule.next_portion()
+            # cleanup prevents a multiprocessing issue where already closed handles are closed again
+            del loop
+            del trainer
 
     def _update_mdl(self, trainer, loop, i):
         # for MDL: using the model trained on the set portion(i),
