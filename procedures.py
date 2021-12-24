@@ -76,7 +76,8 @@ class BaseTraining(Procedure, ABC):
             monitor=train_cfg.monitor,
             mode=train_cfg.mode,
             verbose=True,
-            filename='{epoch:03d}-{' + train_cfg.monitor.replace('/', '_') + ':.3f}',
+            filename='epoch-{epoch:03d}-' + train_cfg.monitor.replace('/', '_') + '-{' + train_cfg.monitor + ':.3f}',
+            auto_insert_metric_name=False,
             dirpath=ckpt_path
         )
 
