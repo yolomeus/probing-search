@@ -1,7 +1,7 @@
 _target_: model.probing.mlp.TenneyMLP
 
 input_dim: ${model.pooler.hidden_dim}
-hidden_dim: 512
+hidden_dim: 256
 output_dim: ${datamodule.dataset.num_classes}
-dropout: 0.2
+dropout: 0.3
 pair_targets: ${datamodule.dataset.task.has_pair_targets}

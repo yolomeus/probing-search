@@ -1,7 +1,7 @@
 _target_: loop.DefaultClassificationLoop
 
 loss:
-  _target_: torch.nn.BCEWithLogitsLoss
+  _target_: torch.nn.CrossEntropyLoss
 
 optimizer:
   _target_: torch.optim.Adam

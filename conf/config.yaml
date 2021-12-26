@@ -28,7 +28,7 @@ testing:
   batch_size: 32
 
 metrics:
-  to_probabilities: 'sigmoid'
+  to_probabilities: 'softmax'
   metrics_list:
     - _target_: torchmetrics.F1
       average: 'micro'
