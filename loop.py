@@ -8,6 +8,7 @@ from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
 from torch.nn import Module
 from torch.optim import Optimizer
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from datamodule import DatasetSplit
 from logger.utils import Metrics
@@ -39,7 +40,12 @@ class DefaultClassificationLoop(AbstractBaseLoop):
         self.metrics = Metrics(self.loss, hparams.metrics.metrics_list, hparams.metrics.to_probabilities)
 
     def configure_optimizers(self):
-        return self.optimizer
+        train_conf = self.hparams.training
+        return {'optimizer': self.optimizer,
+                'lr_scheduler': {'scheduler': ReduceLROnPlateau(self.optimizer,
+                                                                factor=train_conf.schedule_factor,
+                                                                patience=train_conf.schedule_patience),
+                                 'monitor': train_conf.monitor}}
 
     def training_step(self, batch, batch_idx):
         x, y_true = batch

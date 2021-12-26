@@ -10,15 +10,17 @@ random_seed: 1590258941
 continue_from_checkpoint: null
 
 training:
-  epochs: 30
+  epochs: 100
   batch_size: 32
   gradient_clip_val: 5.0
   accumulate_batches: 1
-  # checkpointing and early stopping
+  # checkpointing, early stopping, lr scheduling
   save_ckpts: 1
   monitor: val/loss
   mode: min
   patience: 5
+  schedule_factor: 0.5
+  schedule_patience: 0
 
 testing:
   log_dir: 'outputs/'
@@ -30,6 +32,7 @@ metrics:
   metrics_list:
     - _target_: torchmetrics.F1
       average: 'micro'
+    - _target_: torchmetrics.Accuracy
 
 log_gradients: False
 logger: # set to null to use PL default logging
