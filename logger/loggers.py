@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities import rank_zero_only
 
@@ -16,9 +15,6 @@ class WandbMinMaxLogger(WandbLogger):
 
         self._postfix = postfix
         self._bounds_dict = {}
-
-    def __del__(self):
-        wandb.finish()
 
     @rank_zero_only
     def log_metrics(self, metrics, step=None):
