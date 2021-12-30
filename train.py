@@ -1,4 +1,5 @@
 import hydra
+import wandb
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything
 
@@ -13,6 +14,8 @@ def train(cfg: DictConfig):
 
     training = MDLProbeTraining(cfg)
     training.run()
+
+    wandb.finish()
 
 
 if __name__ == '__main__':
