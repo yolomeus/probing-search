@@ -4,7 +4,7 @@ from typing import List
 
 from hydra.utils import instantiate
 from omegaconf import DictConfig
-from torch.nn import Module, ModuleList, Softmax, Sigmoid
+from torch.nn import Module, ModuleList, Softmax, Sigmoid, Identity
 
 from datamodule import DatasetSplit
 
@@ -32,6 +32,8 @@ class Metrics(Module):
             self.to_probabilities = Sigmoid()
         elif to_probabilities == 'softmax':
             self.to_probabilities = Softmax(dim=-1)
+        elif to_probabilities is None:
+            self.to_probabilities = Identity()
 
     def forward(self, loop, y_pred, y_true, split: DatasetSplit):
         y_prob = self.to_probabilities(y_pred)
@@ -44,7 +46,7 @@ class Metrics(Module):
             metrics = self.val_metrics
 
         for metric in metrics:
-            metric(y_prob, y_true.long())
+            metric(y_prob, y_true)
             loop.log(f'{split.value}/' + self.classname(metric),
                      metric,
                      on_step=False,
