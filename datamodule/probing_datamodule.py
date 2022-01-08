@@ -43,36 +43,31 @@ class ProbingDataModule(AbstractDefaultDataModule):
         self._preprocessor = preprocessor
 
         self._labels_to_onehot = labels_to_onehot
-        self._label2id = self.read_labels(self._dataset_conf.label_file)
+
+        if hasattr(self._dataset_conf, 'label_file'):
+            self._label2id = self.read_labels(self._dataset_conf.label_file)
+        else:
+            self._label2id = None
 
     @property
     def train_ds(self):
-        return JSONLDataset(
-            self._dataset_conf.task,
-            self._dataset_conf.train_file,
-            self._label2id,
-            self._preprocessor,
-            self._labels_to_onehot
-        )
+        return self._build_ds(self._dataset_conf.train_file)
 
     @property
     def val_ds(self):
-        return JSONLDataset(
-            self._dataset_conf.task,
-            self._dataset_conf.dev_file,
-            self._label2id,
-            self._preprocessor,
-            self._labels_to_onehot
-        )
+        return self._build_ds(self._dataset_conf.val_file)
 
     @property
     def test_ds(self):
+        return self._build_ds(self._dataset_conf.test_file)
+
+    def _build_ds(self, filepath):
         return JSONLDataset(
             self._dataset_conf.task,
-            self._dataset_conf.test_file,
-            self._label2id,
+            filepath,
             self._preprocessor,
-            self._labels_to_onehot
+            self._labels_to_onehot,
+            self._label2id
         )
 
     @staticmethod
@@ -165,7 +160,7 @@ class JSONLDataset(Dataset):
     """A dataset that reads dict instances from a jsonl file into memory, and applies preprocessing to each instance.
     """
 
-    def __init__(self, task, filepath, label2id, preprocessor: Preprocessor, labels_to_onehot):
+    def __init__(self, task, filepath, preprocessor: Preprocessor, labels_to_onehot: bool, label2id=None):
         """
 
         :param task: name of the task the dataset will be used for.
@@ -205,16 +200,17 @@ class JSONLDataset(Dataset):
             # filter out instances with no target spans
             instances = tuple(filter(lambda x: len(x['targets']) > 0, instances))
 
-        # replace label strings with one-hot encoding of integer ids for training
-        one_hot_lookup = torch.eye(len(self._label2id))
-        for instance in instances:
-            for target in instance['targets']:
-                label_str = target['label']
-                label_id = self._label2id[label_str]
-                if self._labels_to_onehot:
-                    target['label'] = one_hot_lookup[label_id]
-                else:
-                    target['label'] = label_id
+        if self._label2id is not None:
+            # replace label strings with integer ids or one-hot encoding for training
+            one_hot_lookup = torch.eye(len(self._label2id))
+            for instance in instances:
+                for target in instance['targets']:
+                    label_str = target['label']
+                    label_id = self._label2id[label_str]
+                    if self._labels_to_onehot:
+                        target['label'] = one_hot_lookup[label_id]
+                    else:
+                        target['label'] = label_id
 
         return instances
 
