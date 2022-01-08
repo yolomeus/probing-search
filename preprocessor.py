@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from itertools import chain
 
 import numpy as np
 import torch
@@ -54,7 +53,7 @@ class EdgeProbingPreprocessor(Preprocessor, ABC):
             spans1, spans2 = zip(*spans)
             span_ids = self._spans_to_triples(spans1), self._spans_to_triples(spans2)
 
-        labels = torch.stack(tuple(chain(*labels)))
+        labels = torch.cat(labels, dim=0)
         batch_enc = self.text_collate(encodings)
 
         return (batch_enc, span_ids), labels
@@ -72,6 +71,51 @@ class EdgeProbingPreprocessor(Preprocessor, ABC):
 
 
 class BERTPreprocessor(EdgeProbingPreprocessor):
+
+    def __init__(self, tokenizer_name, bucketize_labels: int, pair_targets: bool):
+        super().__init__(pair_targets)
+        self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
+        self.bucketize_labels = bucketize_labels
+
+    def preprocess(self, input_text, spans=None, labels=None):
+        query, passage = input_text.split(' [SEP] ')
+
+        labels = torch.tensor(labels)
+        if self.bucketize_labels > 1:
+            labels = self._bucketize_labels(labels)
+
+        if spans is None:
+            # we need to compute spans ourselves
+            token_ids = self.tokenizer(query, passage, truncation=True, add_special_tokens=True)
+            type_ids = torch.as_tensor(token_ids['token_type_ids'])
+
+            query_len = len(type_ids[type_ids == 0]) - 1
+            query_span = [1, query_len]
+            passage_span = [query_len + 1, len(type_ids) - 1]
+
+            return (query, passage), ([query_span], [passage_span]), labels
+
+        return (query, passage), spans, labels
+
+    def text_collate(self, encodings):
+        queries, passages = zip(*encodings)
+        batch_encoding = self.tokenizer(queries,
+                                        passages,
+                                        truncation=True,
+                                        padding='longest',
+                                        return_tensors='pt')
+        return batch_encoding
+
+    def _bucketize_labels(self, labels):
+        boundaries = torch.linspace(0, 1, self.bucketize_labels)
+        return torch.bucketize(labels, boundaries)
+
+
+class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
+    """A preprocessor that expects pre-computed spans based on whitespace tokenization. BERT tokenization is applied
+    and the spans are recomputed accordingly. (To be used with Ontonotes 5 datasets)
+    """
+
     def __init__(self, tokenizer_name, pair_targets: bool):
         super().__init__(pair_targets)
         self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)

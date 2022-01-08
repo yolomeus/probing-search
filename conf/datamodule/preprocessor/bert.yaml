@@ -1,3 +1,4 @@
 _target_: preprocessor.BERTPreprocessor
 tokenizer_name: 'bert-base-uncased'
 pair_targets: ${datamodule.dataset.task.has_pair_targets}
+bucketize_labels: ${datamodule.dataset.num_classes}
