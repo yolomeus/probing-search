@@ -12,11 +12,12 @@ class Preprocessor(ABC):
     """
 
     @abstractmethod
-    def preprocess(self, input_text, spans):
+    def preprocess(self, input_text, spans=None, labels=None):
         """Preprocess input_text in such a way, that a subject model will accept it.
 
-        :param spans: the target spans to adjust for the new tokenization if necessary.
         :param input_text: the input text that will be fed to a subject model.
+        :param spans: the target spans to adjust for the new tokenization if necessary.
+        :param labels: labels for the processed text.
         :return: the preprocessed text.
         """
 
@@ -75,7 +76,7 @@ class BERTPreprocessor(EdgeProbingPreprocessor):
         super().__init__(pair_targets)
         self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
 
-    def preprocess(self, input_text, spans):
+    def preprocess(self, input_text, spans=None, labels=None):
         """
         :param spans: target spans from original tokenization
         :param input_text: the text to be fed into the subject model.
@@ -90,7 +91,7 @@ class BERTPreprocessor(EdgeProbingPreprocessor):
             new_spans = self._retokenize_spans(input_text, spans)
 
         tokens_full = self.tokenizer(input_text, truncation=True)
-        return tokens_full, new_spans
+        return tokens_full, new_spans, labels
 
     def _retokenize_spans(self, original_text, spans):
         """Given a list of original tokens and spans, recompute new spans for the wordpiece tokenizer.

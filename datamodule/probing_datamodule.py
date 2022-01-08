@@ -179,9 +179,9 @@ class JSONLDataset(Dataset):
         x = self.instances[index]
 
         spans, labels = self._unpack_inputs(x)
-        subject_in, new_spans = self._preprocessor(x['text'], spans)
+        subject_in, new_spans, new_labels = self._preprocessor(x['text'], spans, labels)
 
-        return subject_in, new_spans, torch.as_tensor(labels)
+        return subject_in, new_spans, new_labels
 
     def __len__(self):
         return len(self.instances)
