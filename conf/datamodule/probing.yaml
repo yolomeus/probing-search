@@ -1,5 +1,5 @@
 defaults:
-  - dataset: ontonotes_ner
+  - dataset: msm_bm25
   - preprocessor: bert
 
 _target_: datamodule.probing_datamodule.ProbingDataModule

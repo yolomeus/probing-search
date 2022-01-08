@@ -1,0 +1,10 @@
+defaults:
+  - task: bm25
+
+name: msm_bm25
+
+train_file: data/msm/bm25/train.jsonl
+val_file: data/msm/bm25/validation.jsonl
+test_file: data/msm/bm25/test.jsonl
+
+num_classes: 10
