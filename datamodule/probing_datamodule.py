@@ -218,6 +218,12 @@ class JSONLDataset(Dataset):
         :param x: the edge probing dict to unpack.
         :return: a tuple of (spans, labels), where spans is a pair of spans in case of span targets.
         """
+
+        target_0 = x['targets']
+        if not ('span1' in target_0 or 'span2' in target_0):
+            # we will need to compute spans dynamically
+            return None, [t['label'] for t in x['targets']]
+
         if self._task.has_pair_targets:
             spans1, spans2, labels = zip(*[(t['span1'], t['span2'], t['label'])
                                            for t in x['targets']])
