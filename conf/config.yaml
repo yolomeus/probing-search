@@ -10,7 +10,7 @@ random_seed: 1590258941
 continue_from_checkpoint: null
 
 training:
-  epochs: 100
+  epochs: 200
   batch_size: 32
   gradient_clip_val: 5.0
   accumulate_batches: 1
@@ -18,7 +18,7 @@ training:
   save_ckpts: 1
   monitor: val/loss
   mode: min
-  patience: 5
+  patience: 10
   schedule_factor: 0.5
   schedule_patience: 0
 
@@ -39,7 +39,7 @@ logger: # set to null to use PL default logging
   _target_: logger.loggers.WandbMinMaxLogger
   project: probing-search
   tags:
-    - 'layer:${model.pooler.layer_to_probe}'
+    - layer:${model.pooler.layer_to_probe}
     - ${datamodule.dataset.name}
 
 # set output directories
