@@ -1,6 +1,7 @@
 """Abstraction for different training and testing procedures.
 """
 import logging
+import os.path
 from abc import abstractmethod, ABC
 from os import path, getcwd
 
@@ -31,13 +32,13 @@ class BaseTraining(Procedure, ABC):
         self.log = logging.getLogger('.'.join([self.__module__, self.__class__.__name__]))
         self.cfg = cfg
 
-    def build_trainer(self, logger):
+    def build_trainer(self, logger, callbacks=None):
         train_cfg = self.cfg.training
         trainer = Trainer(
             max_epochs=train_cfg.epochs,
             gpus=self.cfg.gpus,
             logger=logger,
-            callbacks=self.build_callbacks(),
+            callbacks=callbacks,
             accumulate_grad_batches=train_cfg.accumulate_batches,
             gradient_clip_val=train_cfg.gradient_clip_val,
             gradient_clip_algorithm='norm'
@@ -66,9 +67,9 @@ class BaseTraining(Procedure, ABC):
             pin_memory=self.cfg.gpus > 0
         )
 
-    def build_callbacks(self):
+    def build_callbacks(self, ckpt_path=None):
         train_cfg = self.cfg.training
-        ckpt_path = path.join(getcwd(), 'checkpoints/')
+        ckpt_path = path.join(getcwd(), 'checkpoints/') if ckpt_path is None else ckpt_path
 
         model_checkpoint = ModelCheckpoint(
             save_top_k=train_cfg.save_ckpts,
@@ -112,7 +113,7 @@ class DefaultTraining(BaseTraining):
         self.loop = self.build_loop()
 
         self.logger = self.build_logger(self.loop)
-        self.trainer = self.build_trainer(self.logger)
+        self.trainer = self.build_trainer(self.logger, self.build_callbacks())
 
     def run(self):
         self.trainer.fit(self.loop, datamodule=self.datamodule)
@@ -164,7 +165,8 @@ class MDLOnlineCoding(BaseTraining):
             portion_log.log_metrics({'portion_percentage': portion_percentage,
                                      'portion_size': portion_size})
 
-            trainer = self.build_trainer(logger=portion_log)
+            ckpt_path = os.path.join(os.getcwd(), f'checkpoints/mdl/portion_{i:02d}/')
+            trainer = self.build_trainer(logger=portion_log, callbacks=self.build_callbacks(ckpt_path))
             trainer.fit(loop, datamodule)
 
             self._update_mdl(trainer, loop, i)
