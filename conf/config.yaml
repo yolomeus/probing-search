@@ -30,9 +30,11 @@ testing:
 metrics:
   to_probabilities: 'softmax'
   metrics_list:
-    - _target_: torchmetrics.F1
-      average: 'micro'
     - _target_: torchmetrics.Accuracy
+    - _target_: torchmetrics.F1
+      average: 'macro'
+      num_classes: ${datamodule.dataset.num_classes}
+
 
 log_gradients: False
 logger: # set to null to use PL default logging
