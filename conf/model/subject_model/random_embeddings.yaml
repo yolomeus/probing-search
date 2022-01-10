@@ -1,0 +1,5 @@
+_target_: model.subject.random_embeddings.RandomEmbeddings
+model_name: 'random-embeddings'
+# currently using vocab size and hidde dim of bert-base
+num_embeddings: 30522
+h_dim: 768
