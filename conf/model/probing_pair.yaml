@@ -1,6 +1,6 @@
 defaults:
   - subject_model: bert_pretrained
   - pooler: attention
-  - probing_model: hewitt_mlp
+  - probing_model: tenney_mlp
 
 _target_: model.probing_pair.ProbingPair
