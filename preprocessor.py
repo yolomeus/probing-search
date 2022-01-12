@@ -107,7 +107,7 @@ class BERTPreprocessor(EdgeProbingPreprocessor):
         return batch_encoding
 
     def _bucketize_labels(self, labels):
-        boundaries = torch.linspace(0, 1, self.bucketize_labels)
+        boundaries = torch.linspace(0, 1, self.bucketize_labels)[1:]
         return torch.bucketize(labels, boundaries)
 
 
