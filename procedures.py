@@ -73,7 +73,6 @@ class BaseTraining(Procedure, ABC):
 
         model_checkpoint = ModelCheckpoint(
             save_top_k=train_cfg.save_ckpts,
-            save_last=True,
             monitor=train_cfg.monitor,
             mode=train_cfg.mode,
             verbose=True,
