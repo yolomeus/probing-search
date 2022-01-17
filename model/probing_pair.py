@@ -6,11 +6,11 @@ class ProbingPair(Module):
     interface between the subject model and probing model.
     """
 
-    def __init__(self, subject_model: Module, pooler: Module, probing_model: Module, freeze_subject=True):
+    def __init__(self, subject_model: Module, pooler: Module, probe: Module, freeze_subject=True):
         super().__init__()
         self.subject_model = subject_model
         self.pooler = pooler
-        self.probing_model = probing_model
+        self.probe = probe
 
         if freeze_subject:
             self._freeze_model(subject_model)
@@ -33,5 +33,5 @@ class ProbingPair(Module):
         x, target_spans = inputs
         hidden_states = self.subject_model(x)
         x = self.pooler(hidden_states, target_spans)
-        y = self.probing_model(x)
+        y = self.probe(x)
         return y

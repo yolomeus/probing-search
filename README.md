@@ -64,7 +64,7 @@ conf/
 └ ── model (torch.nn.Module)
     # submodules for the probing-pair model
     ├── pooler
-    ├── probing_model
+    ├── probe
     └── subject_model
 ```
 

@@ -1,6 +1,6 @@
 defaults:
   - subject_model: bert_base_uncased
   - pooler: attention
-  - probing_model: tenney_mlp
+  - probe: tenney_mlp
 
 _target_: model.probing_pair.ProbingPair
