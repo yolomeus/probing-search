@@ -4,7 +4,7 @@ from transformers import BertModel
 from transformers.utils import logging
 
 
-class BERTPretrained(Module):
+class BERTHuggingFace(Module):
     """A Pre-Trained BERT from the huggingface transformers library that returns hidden states of all layers, including
     the initial matrix embeddings (layer 0).
     """

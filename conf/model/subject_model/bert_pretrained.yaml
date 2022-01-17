@@ -1,2 +1,0 @@
-_target_: model.subject.bert.BERTPretrained
-model_name: 'bert-base-uncased'

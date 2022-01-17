@@ -1,5 +1,5 @@
 defaults:
-  - subject_model: bert_pretrained
+  - subject_model: bert_base_uncased
   - pooler: attention
   - probing_model: tenney_mlp
 

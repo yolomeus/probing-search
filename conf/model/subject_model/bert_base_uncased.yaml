@@ -1,0 +1,2 @@
+_target_: model.subject.bert.BERTHuggingFace
+model_name: 'bert-base-uncased'
