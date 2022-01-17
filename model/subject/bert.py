@@ -24,7 +24,7 @@ class BERTHuggingFace(Module):
         return outputs.hidden_states
 
 
-class BERTBaseFromCheckpoint(Module):
+class BERTBaseFromLocalCheckpoint(Module):
     def __init__(self, ckpt_path, model_name):
         super().__init__()
         self.model_name = model_name
