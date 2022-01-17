@@ -3,7 +3,7 @@ import wandb
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything
 
-from procedures import MDLProbeTraining
+from procedures import MDLProbeTraining, DefaultTraining
 
 
 @hydra.main(config_path='conf', config_name='config')
@@ -12,9 +12,12 @@ def train(cfg: DictConfig):
 
     seed_everything(cfg.random_seed, workers=True)
 
-    training = MDLProbeTraining(cfg)
-    training.run()
+    if cfg.compute_mdl:
+        training = MDLProbeTraining(cfg)
+    else:
+        training = DefaultTraining(cfg)
 
+    training.run()
     wandb.finish()
 
 
