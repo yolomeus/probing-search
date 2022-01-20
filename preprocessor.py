@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+import spacy
 import torch
 from torch.utils.data.dataloader import default_collate
 from transformers import BertTokenizer, BatchEncoding
@@ -112,13 +113,15 @@ class BERTPreprocessor(EdgeProbingPreprocessor):
 
 
 class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
-    """A preprocessor that expects pre-computed spans based on whitespace tokenization. BERT tokenization is applied
-    and the spans are recomputed accordingly. (To be used with Ontonotes 5 datasets)
+    """A preprocessor that expects pre-computed spans based on SpaCy tokenization. BERT tokenization is applied
+    and the spans are recomputed accordingly.
     """
 
     def __init__(self, tokenizer_name, pair_targets: bool):
         super().__init__(pair_targets)
         self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
+        spacy.cli.download('en_core_web_sm')
+        self.spacy_tokenizer = spacy.load('en_core_web_sm').tokenizer
 
     def preprocess(self, input_text, spans=None, labels=None):
         """
@@ -134,8 +137,8 @@ class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
         else:
             new_spans = self._retokenize_spans(input_text, spans)
 
-        tokens_full = self.tokenizer(input_text, truncation=True)
-        return tokens_full, new_spans, labels
+        tokens_full = self.tokenizer(*input_text.split(' [SEP] '), truncation=True)
+        return tokens_full, new_spans, torch.tensor(labels)
 
     def _retokenize_spans(self, original_text, spans):
         """Given a list of original tokens and spans, recompute new spans for the wordpiece tokenizer.
@@ -145,20 +148,33 @@ class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
         :return: 
         """
 
-        vanilla_tokens = original_text.split()
-        left_spans = [' '.join(vanilla_tokens[:a]) for a, _ in spans]
-        original_spans = [' '.join(vanilla_tokens[a:b]) for a, b in spans]
+        query, passage = original_text.split(' [SEP] ')
+        vanilla_tokens = [str(token) for token in self.spacy_tokenizer(query + ' ' + passage)]
+
+        # everything left to the span
+        text_left_spans = [' '.join(vanilla_tokens[:a]) for a, _ in spans]
+        text_original_spans = [' '.join(vanilla_tokens[a:b]) for a, b in spans]
 
         left_retokenized = [self.tokenizer(left_span,
                                            add_special_tokens=False)['input_ids']
-                            for left_span in left_spans]
+                            for left_span in text_left_spans]
         span_retokenized = [self.tokenizer(span,
                                            add_special_tokens=False)['input_ids']
-                            for span in original_spans]
+                            for span in text_original_spans]
 
-        # shift 1 by one to account for the [cls] token in the beginning
-        new_spans = [(1 + len(a), 1 + len(a) + len(b))
-                     for a, b in zip(left_retokenized, span_retokenized)]
+        # shift by one to account for the [cls] token in the beginning
+        new_spans = []
+        sep_pos = len(self.tokenizer(query, add_special_tokens=False))
+
+        for a, b in zip(left_retokenized, span_retokenized):
+            # shift by 1 for [cls]
+            span = (1 + len(a), 1 + len(a) + len(b))
+            # shift another for [sep] if span is within passage, i.e. right to sep
+            if span[0] > sep_pos:
+                span = (span[0] + 1, span[1] + 1)
+
+            new_spans.append(span)
+
         return new_spans
 
     def text_collate(self, encodings):

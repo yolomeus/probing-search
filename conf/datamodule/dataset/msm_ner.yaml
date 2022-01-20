@@ -1,0 +1,11 @@
+defaults:
+  - task: ner
+
+name: msm_ner
+
+train_file: data/msm/ner/train.jsonl
+val_file: data/msm/ner/validation.jsonl
+test_file: data/msm/ner/test.jsonl
+label_file: data/msm/ner/labels.txt
+
+num_classes: 18
