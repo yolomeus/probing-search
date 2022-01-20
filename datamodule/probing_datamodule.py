@@ -219,8 +219,8 @@ class JSONLDataset(Dataset):
         :return: a tuple of (spans, labels), where spans is a pair of spans in case of span targets.
         """
 
-        target_0 = x['targets']
-        if not ('span1' in target_0 or 'span2' in target_0):
+        target_0 = x['targets'][0]
+        if 'span1' not in target_0:
             # we will need to compute spans dynamically
             return None, [t['label'] for t in x['targets']]
 
