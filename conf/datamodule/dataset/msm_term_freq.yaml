@@ -1,0 +1,10 @@
+defaults:
+  - task: single_score
+
+name: msm_term_freq
+
+train_file: data/msm/term_freq/train.jsonl
+val_file: data/msm/term_freq/validation.jsonl
+test_file: data/msm/term_freq/test.jsonl
+
+num_classes: 10

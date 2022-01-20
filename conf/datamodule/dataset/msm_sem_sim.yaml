@@ -1,0 +1,10 @@
+defaults:
+  - task: single_score
+
+name: msm_sem_sim
+
+train_file: data/msm/sem_sim/train.jsonl
+val_file: data/msm/sem_sim/validation.jsonl
+test_file: data/msm/sem_sim/test.jsonl
+
+num_classes: 10
