@@ -1,5 +1,5 @@
 defaults:
-  - task: coref
+  - task: single_score
 
 name: ontonotes_coref
 

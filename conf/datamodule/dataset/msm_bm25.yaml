@@ -1,5 +1,5 @@
 defaults:
-  - task: bm25
+  - task: single_score
 
 name: msm_bm25
 
