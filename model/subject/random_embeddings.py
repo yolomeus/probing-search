@@ -8,7 +8,7 @@ class RandomEmbeddings(Module):
     def __init__(self, num_embeddings, h_dim, model_name=None):
         """
 
-        :param num_embeddings: Number od different embeddings in the embedding matrix, i.e. vocab size.
+        :param num_embeddings: Number of different embeddings in the embedding matrix, i.e. vocab size.
         :param h_dim: size of each embedding.
         :param model_name: name of this model.
         """
