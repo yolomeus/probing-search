@@ -10,7 +10,7 @@ random_seed: 1590258941
 compute_mdl: True
 
 training:
-  epochs: 200
+  epochs: 50
   batch_size: 32
   gradient_clip_val: 5.0
   accumulate_batches: 1
@@ -50,7 +50,7 @@ hydra:
     dir: outputs/single/${datamodule.dataset.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
   sweep:
-    dir: outputs/sweep/${datamodule.dataset.name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: outputs/sweep/${datamodule.dataset.name}/${model.subject_model.model_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: 'layer=${model.pooler.layer_to_probe}'
   # ${hydra.job.num}
 
