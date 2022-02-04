@@ -1,0 +1,2 @@
+"Name","State","Runtime","Tags","End Time","model/subject_model/model_name","Created","model/pooler/layer_to_probe","val/accuracy/max","val/loss/min","test/accuracy","test/loss","mdl","compression"
+"balmy-resonance-649","finished","799","layer:0, msm_bm25","2022-01-26T01:29:16.000Z","random-embeddings","2022-01-26T01:15:57.000Z","0","0.5920000076293945","1.1233084201812744","0.6079999804496765","1.058435559272766","11256.5068359375","2.656006097793579"
