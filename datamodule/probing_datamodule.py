@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader, Subset
 from datamodule import DatasetSplit
 from datamodule.dataset import JSONLDataset
 from datamodule.default_datamodule import AbstractDefaultDataModule, MultiPortionMixin
+from datamodule.dataset import JSONLDataset
 from preprocessor import Preprocessor
 
 
