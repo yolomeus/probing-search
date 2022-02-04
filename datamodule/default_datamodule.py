@@ -1,5 +1,5 @@
-from abc import abstractmethod, ABC
-from typing import List
+from abc import ABC, abstractmethod
+from typing import List, Optional
 
 import torch
 from pytorch_lightning import LightningDataModule
@@ -28,28 +28,13 @@ class AbstractDefaultDataModule(LightningDataModule):
         self._pin_memory = pin_memory
         self._persistent_workers = persistent_workers
 
-    @property
+        self.train_ds = None
+        self.val_ds = None
+        self.test_ds = None
+
     @abstractmethod
-    def train_ds(self):
-        """Build the train pytorch dataset.
-
-        :return: the train pytorch dataset.
-        """
-
-    @property
-    @abstractmethod
-    def val_ds(self):
-        """Build the validation pytorch dataset.
-
-        :return: the validation pytorch dataset.
-        """
-
-    @property
-    @abstractmethod
-    def test_ds(self):
-        """Build the test pytorch dataset.
-
-        :return: the test pytorch dataset.
+    def setup(self, stage: Optional[str] = None) -> None:
+        """Assign train_ds, val_ds and test_ds here.
         """
 
     def train_dataloader(self):
@@ -124,6 +109,7 @@ class MultiPortionMixin(AbstractDefaultDataModule, ABC):
         self._training_ids = None
 
     def setup(self, stage=None):
+        super().setup(stage)
         self._training_ids = self._init_training_ids()
 
     def _init_training_ids(self):

@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Optional
 
 import torch
 from hydra.utils import to_absolute_path
@@ -47,17 +47,11 @@ class ProbingDataModule(AbstractDefaultDataModule):
         else:
             self._label2id = None
 
-    @property
-    def train_ds(self):
-        return self._build_ds(self._dataset_conf.train_file)
-
-    @property
-    def val_ds(self):
-        return self._build_ds(self._dataset_conf.val_file)
-
-    @property
-    def test_ds(self):
-        return self._build_ds(self._dataset_conf.test_file)
+    def setup(self, stage: Optional[str] = None) -> None:
+        if None in [self.train_ds, self.val_ds, self.test_ds]:
+            self.train_ds = self._build_ds(self._dataset_conf.train_file)
+            self.val_ds = self._build_ds(self._dataset_conf.val_file)
+            self.test_ds = self._build_ds(self._dataset_conf.test_file)
 
     def _build_ds(self, filepath):
         return JSONLDataset(
@@ -194,9 +188,8 @@ class JSONLDataset(Dataset):
         with open(to_absolute_path(self._filepath), 'r') as fp:
             instances = tuple(json.loads(line) for line in fp)
 
-        if self._task.requires_target_spans:
-            # filter out instances with no target spans
-            instances = tuple(filter(lambda x: len(x['targets']) > 0, instances))
+        # filter out instances with no target spans
+        instances = tuple(filter(lambda x: len(x['targets']) > 0, instances))
 
         if self._label2id is not None:
             # replace label strings with integer ids or one-hot encoding for training
@@ -213,7 +206,7 @@ class JSONLDataset(Dataset):
         return instances
 
     def _unpack_inputs(self, x):
-        """Unpack spans ans labels from an edge probing instance.
+        """Unpack spans and labels from an edge probing instance.
 
         :param x: the edge probing dict to unpack.
         :return: a tuple of (spans, labels), where spans is a pair of spans in case of span targets.
