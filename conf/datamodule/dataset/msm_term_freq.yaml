@@ -3,8 +3,13 @@ defaults:
 
 name: msm_term_freq
 
+raw_file: data/msm/term_freq/msmarco_tf_60000_10_2022_01_14-16-22-39.json
+
 train_file: data/msm/term_freq/train.jsonl
 val_file: data/msm/term_freq/validation.jsonl
 test_file: data/msm/term_freq/test.jsonl
+
+num_train_samples: 40000
+num_test_samples: 20000
 
 num_classes: 10

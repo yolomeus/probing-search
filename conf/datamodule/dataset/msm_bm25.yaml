@@ -3,8 +3,13 @@ defaults:
 
 name: msm_bm25
 
+raw_file: data/msm/bm25/msmarco_bm25_dataset.json
+
 train_file: data/msm/bm25/train.jsonl
 val_file: data/msm/bm25/validation.jsonl
 test_file: data/msm/bm25/test.jsonl
+
+num_train_samples: 40000
+num_test_samples: 20000
 
 num_classes: 10

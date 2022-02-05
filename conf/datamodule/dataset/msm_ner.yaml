@@ -1,11 +1,16 @@
 defaults:
-  - task: ner
+  - task: single_span_categorical
 
 name: msm_ner
+
+raw_file: data/msm/ner/msmarco_ner_60000_10_2022_01_14-16-41-48.json
 
 train_file: data/msm/ner/train.jsonl
 val_file: data/msm/ner/validation.jsonl
 test_file: data/msm/ner/test.jsonl
 label_file: data/msm/ner/labels.txt
+
+num_train_samples: 20000
+num_test_samples: 20000
 
 num_classes: 18

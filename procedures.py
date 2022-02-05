@@ -136,6 +136,7 @@ class MDLOnlineCoding(BaseTraining):
 
         # we need to initialize the train ids first if we want to access portion sizes etc. before training
         self.datamodule = datamodule
+        self.datamodule.prepare_data()
         self.datamodule.setup()
 
     def run(self):
