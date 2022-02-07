@@ -120,7 +120,7 @@ class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
     def __init__(self, tokenizer_name, pair_targets: bool):
         super().__init__(pair_targets)
         self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
-        spacy.cli.download('en_core_web_sm')
+        spacy.cli.download('en_core_web_sm-2.1.0', direct=True)
         self.spacy_tokenizer = spacy.load('en_core_web_sm').tokenizer
 
     def preprocess(self, input_text, spans=None, labels=None):
