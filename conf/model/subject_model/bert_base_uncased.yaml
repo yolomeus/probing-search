@@ -1,2 +1,3 @@
 _target_: model.subject.bert.BERTHuggingFace
 model_name: 'bert-base-uncased'
+num_layers: ${model.pooler.layer_to_probe}

@@ -5,7 +5,7 @@ defaults:
   - loop: default_loop
 
 gpus: 1
-num_workers: 4
+num_workers: 8
 random_seed: 1590258941
 compute_mdl: True
 
@@ -39,7 +39,7 @@ metrics:
 log_gradients: False
 logger: # set to null to use PL default logging
   _target_: logger.loggers.WandbMinMaxLogger
-  project: probing-search
+  project: debug
   tags:
     - layer:${model.pooler.layer_to_probe}
     - ${datamodule.dataset.name}

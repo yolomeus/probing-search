@@ -1,3 +1,4 @@
 _target_: model.subject.bert.BERTBaseFromLocalCheckpoint
 ckpt_path: ${hydra:runtime.cwd}/data/model_checkpoints/bert/bert_msm_doc.ckpt
 model_name: bert-msm-doc
+num_layers: ${model.pooler.layer_to_probe}

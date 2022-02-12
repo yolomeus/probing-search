@@ -1,5 +1,5 @@
 _target_: model.pooler.attention.AttentionPooler
 input_dim: 768
 hidden_dim: 256
-layer_to_probe: -1
+layer_to_probe: 12
 pair_targets: ${datamodule.dataset.task.has_pair_targets}
