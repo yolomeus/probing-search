@@ -43,9 +43,8 @@ class BERTHuggingFace(BERT):
 
 class BERTBaseFromLocalCheckpoint(BERT):
     def __init__(self, ckpt_path, model_name, num_layers):
-        super().__init__(model_name, num_layers)
         self.ckpt_path = ckpt_path
-        self.model_name = model_name
+        super().__init__(model_name, num_layers)
 
     def _build_bert(self, num_layers):
         state_dict = torch.load(self.ckpt_path)
