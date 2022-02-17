@@ -39,7 +39,7 @@ metrics:
 log_gradients: False
 logger: # set to null to use PL default logging
   _target_: logger.loggers.WandbMinMaxLogger
-  project: debug
+  project: probing-search
   tags:
     - layer:${model.pooler.layer_to_probe}
     - ${datamodule.dataset.name}
