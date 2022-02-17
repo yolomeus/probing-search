@@ -138,7 +138,7 @@ class MultiPortionMixin(AbstractDefaultDataModule, ABC):
             num_workers=self._num_workers,
             pin_memory=self._pin_memory,
             collate_fn=self.build_collate_fn(DatasetSplit.TRAIN),
-            persistent_workers=self._persistent_workers
+            persistent_workers=self._num_workers > 0
         )
 
     def _train_portion(self, ds):
