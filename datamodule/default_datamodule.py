@@ -12,7 +12,7 @@ class AbstractDefaultDataModule(LightningDataModule):
     """Base class for pytorch-lightning DataModule datasets. You can subclass this if you have a standard train,
     validation, test split."""
 
-    def __init__(self, train_conf, test_conf, num_workers, pin_memory, persistent_workers=True):
+    def __init__(self, train_conf, test_conf, num_workers, pin_memory):
         """
         :param train_conf: global training configuration
         :param test_conf: global test configuration
@@ -26,7 +26,6 @@ class AbstractDefaultDataModule(LightningDataModule):
         self._test_conf = test_conf
         self._num_workers = num_workers
         self._pin_memory = pin_memory
-        self._persistent_workers = persistent_workers
 
         self.train_ds = None
         self.val_ds = None
@@ -45,7 +44,7 @@ class AbstractDefaultDataModule(LightningDataModule):
             num_workers=self._num_workers,
             pin_memory=self._pin_memory,
             collate_fn=self.build_collate_fn(DatasetSplit.TRAIN),
-            persistent_workers=self._persistent_workers)
+            persistent_workers=self._num_workers > 0)
         return train_dl
 
     def val_dataloader(self):
@@ -55,7 +54,7 @@ class AbstractDefaultDataModule(LightningDataModule):
             num_workers=self._num_workers,
             pin_memory=self._pin_memory,
             collate_fn=self.build_collate_fn(DatasetSplit.VALIDATION),
-            persistent_workers=self._persistent_workers
+            persistent_workers=self._num_workers > 0
         )
         return val_dl
 
@@ -66,7 +65,7 @@ class AbstractDefaultDataModule(LightningDataModule):
             num_workers=self._num_workers,
             pin_memory=self._pin_memory,
             collate_fn=self.build_collate_fn(DatasetSplit.TEST),
-            persistent_workers=self._persistent_workers
+            persistent_workers=self._num_workers > 0
         )
         return test_dl
 
