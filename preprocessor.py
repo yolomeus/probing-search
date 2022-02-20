@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import spacy
 import torch
+import transformers
 from torch.utils.data.dataloader import default_collate
 from transformers import BertTokenizer, BatchEncoding
 
@@ -80,6 +81,7 @@ class BERTPreprocessor(EdgeProbingPreprocessor):
         self.num_buckets = num_buckets
 
     def preprocess(self, input_text, spans=None, labels=None):
+        transformers.logging.set_verbosity_error()
         query, passage = input_text.split(' [SEP] ')
 
         labels = torch.tensor(labels)
@@ -100,6 +102,7 @@ class BERTPreprocessor(EdgeProbingPreprocessor):
         return (query, passage), spans, labels
 
     def text_collate(self, encodings):
+        transformers.logging.set_verbosity_error()
         queries, passages = zip(*encodings)
         batch_encoding = self.tokenizer(queries,
                                         passages,

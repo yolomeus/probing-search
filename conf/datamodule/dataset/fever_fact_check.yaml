@@ -1,0 +1,17 @@
+defaults:
+  - task: double_span_class
+
+name: fever_fact_check
+
+raw_file: null
+
+train_file: data/fever/fact_check/train.jsonl
+val_file: data/fever/fact_check/validation.jsonl
+test_file: data/fever/fact_check/test.jsonl
+
+label_file: data/fever/fact_check/labels.txt
+
+num_train_samples: 36400
+num_test_samples: 15600
+
+num_classes: 2

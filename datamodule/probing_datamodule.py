@@ -78,32 +78,33 @@ class ProbingDataModule(AbstractDefaultDataModule):
         return self._preprocessor.collate
 
     def prepare_data(self) -> None:
-        raw_dataset = to_absolute_path(self._dataset.raw_file)
-        to_be_generated = list(map(to_absolute_path,
-                                   [self._dataset.train_file, self._dataset.val_file, self._dataset.test_file]))
+        if self._dataset.raw_file is not None:
+            raw_dataset = to_absolute_path(self._dataset.raw_file)
+            to_be_generated = list(map(to_absolute_path,
+                                       [self._dataset.train_file, self._dataset.val_file, self._dataset.test_file]))
 
-        if not all(map(os.path.exists, to_be_generated)):
-            self.log.info('Generating dataset splits')
-            # load raw data
-            with open(raw_dataset, 'r', encoding='utf8') as fp:
-                ds = json.load(fp)
+            if not all(map(os.path.exists, to_be_generated)):
+                self.log.info('Generating dataset splits')
+                # load raw data
+                with open(raw_dataset, 'r', encoding='utf8') as fp:
+                    ds = json.load(fp)
 
-            # create random splits
-            train_ds, val_ds, test_ds = self._split_dataset(ds,
-                                                            self._dataset.num_train_samples,
-                                                            self._dataset.num_test_samples)
+                # create random splits
+                train_ds, val_ds, test_ds = self._split_dataset(ds,
+                                                                self._dataset.num_train_samples,
+                                                                self._dataset.num_test_samples)
 
-            # normalize target scores between 0 and 1
-            if self._dataset.task.normalize_target:
-                ds_splits, min_score_train, max_score_train = self._min_max_normalize(train_ds, val_ds, test_ds)
-                labels = None
-            else:
-                ds_splits, min_score_train, max_score_train = (train_ds, val_ds, test_ds), None, None
-                labels = set(chain.from_iterable([[t['label'] for t in x['targets']] for x in ds]))
+                # normalize target scores between 0 and 1
+                if self._dataset.task.normalize_target:
+                    ds_splits, min_score_train, max_score_train = self._min_max_normalize(train_ds, val_ds, test_ds)
+                    labels = None
+                else:
+                    ds_splits, min_score_train, max_score_train = (train_ds, val_ds, test_ds), None, None
+                    labels = set(chain.from_iterable([[t['label'] for t in x['targets']] for x in ds]))
 
-            # export splits as jsonl files
-            output_dir = to_absolute_path(os.path.split(to_be_generated[0])[0])
-            self._export_splits(output_dir, ds_splits, labels, min_score_train, max_score_train)
+                # export splits as jsonl files
+                output_dir = to_absolute_path(os.path.split(to_be_generated[0])[0])
+                self._export_splits(output_dir, ds_splits, labels, min_score_train, max_score_train)
 
     @staticmethod
     def _split_dataset(dataset, num_train_samples, num_test_samples):

@@ -1,0 +1,4 @@
+# a task with a single score as target and two spans to pool from the sequence
+single_span: False
+regression_target: False
+normalize_target: False
