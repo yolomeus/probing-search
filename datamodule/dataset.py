@@ -76,7 +76,7 @@ class JSONLDataset(Dataset):
             # we will need to compute spans dynamically
             return None, [t['label'] for t in x['targets']]
 
-        if self._task.has_pair_targets:
+        if not self._task.single_span:
             spans1, spans2, labels = zip(*[(t['span1'], t['span2'], t['label'])
                                            for t in x['targets']])
             spans = (spans1, spans2)

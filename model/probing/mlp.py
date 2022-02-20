@@ -4,10 +4,10 @@ from torch.nn import Module, Sequential, Linear, Tanh, LayerNorm, Dropout, ReLU
 
 
 class MLP(Module, ABC):
-    def __init__(self, input_dim, hidden_dim, output_dim, dropout, pair_targets):
+    def __init__(self, input_dim, hidden_dim, output_dim, dropout, single_span):
         super().__init__()
 
-        if pair_targets:
+        if not single_span:
             input_dim *= 2
 
         self.input_dim = input_dim

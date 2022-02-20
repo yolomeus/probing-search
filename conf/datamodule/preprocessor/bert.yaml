@@ -1,4 +1,5 @@
 _target_: preprocessor.BERTPreprocessor
 tokenizer_name: 'bert-base-uncased'
-pair_targets: ${datamodule.dataset.task.has_pair_targets}
-bucketize_labels: ${datamodule.dataset.num_classes}
+single_span: ${datamodule.dataset.task.single_span}
+bucketize_labels: ${datamodule.dataset.task.regression_target}
+num_buckets: ${datamodule.dataset.num_classes}

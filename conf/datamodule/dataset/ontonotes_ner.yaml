@@ -1,5 +1,5 @@
 defaults:
-  - task: ner
+  - task: single_span_class
 
 name: ontonotes_ner
 

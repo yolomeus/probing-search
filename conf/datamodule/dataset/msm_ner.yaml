@@ -1,5 +1,5 @@
 defaults:
-  - task: single_span_categorical
+  - task: single_span_class
 
 name: msm_ner
 

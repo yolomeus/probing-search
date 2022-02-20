@@ -1,0 +1,4 @@
+# a task with one or more classification targets and for each a single span to pool from the sequence
+single_span: True
+regression_target: False
+normalize_target: False

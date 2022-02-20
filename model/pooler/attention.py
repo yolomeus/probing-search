@@ -6,11 +6,11 @@ class AttentionPooler(Module):
     """Attention pooling as described in https://arxiv.org/pdf/1905.06316.pdf (page 14, C).
     """
 
-    def __init__(self, input_dim, hidden_dim, layer_to_probe, pair_targets):
+    def __init__(self, input_dim, hidden_dim, layer_to_probe, single_span):
         super().__init__()
 
         self.layer_to_probe = layer_to_probe
-        self.pair_targets = pair_targets
+        self.single_span = single_span
 
         self.in_projections = ModuleList([Linear(input_dim, hidden_dim),
                                           Linear(input_dim, hidden_dim)])
@@ -26,7 +26,7 @@ class AttentionPooler(Module):
         :return: a tensor of pooled span embeddings of dimension `hidden_dim` or 2 * `hidden_dim` for pair tasks.
         """
 
-        if self.pair_targets:
+        if not self.single_span:
             pooled_span1 = self._single_span_pool(hidden_states, target_spans[0], 0)
             pooled_span2 = self._single_span_pool(hidden_states, target_spans[1], 1)
 

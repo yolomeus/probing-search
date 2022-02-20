@@ -35,18 +35,18 @@ class Preprocessor(ABC):
 
 
 class EdgeProbingPreprocessor(Preprocessor, ABC):
-    """Already collates spans and labels from edge probing inputs by flattening them and prepending batch indexes to
-    each span. Needs to overwrite `text_collate` for collating text encodings depending on preprocessing.
+    """Automatically collates spans and labels from edge probing inputs by flattening them and prepending batch indices
+    to each span. Needs to overwrite `text_collate` for collating text encodings depending on preprocessing.
     """
 
-    def __init__(self, pair_targets: bool):
-        self.pair_targets = pair_targets
+    def __init__(self, single_span: bool):
+        self.single_span = single_span
 
     def collate(self, data):
         encodings, spans, labels = zip(*data)
 
         # prepend batch idx to each span and flatten
-        if not self.pair_targets:
+        if self.single_span:
             # single span per prediction
             span_ids = self._spans_to_triples(spans)
         else:
@@ -73,16 +73,17 @@ class EdgeProbingPreprocessor(Preprocessor, ABC):
 
 class BERTPreprocessor(EdgeProbingPreprocessor):
 
-    def __init__(self, tokenizer_name, bucketize_labels: int, pair_targets: bool):
-        super().__init__(pair_targets)
+    def __init__(self, tokenizer_name, bucketize_labels: bool, num_buckets: int, single_span: bool):
+        super().__init__(single_span)
         self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
         self.bucketize_labels = bucketize_labels
+        self.num_buckets = num_buckets
 
     def preprocess(self, input_text, spans=None, labels=None):
         query, passage = input_text.split(' [SEP] ')
 
         labels = torch.tensor(labels)
-        if self.bucketize_labels > 1:
+        if self.bucketize_labels:
             labels = self._bucketize_labels(labels)
 
         if spans is None:
@@ -108,7 +109,7 @@ class BERTPreprocessor(EdgeProbingPreprocessor):
         return batch_encoding
 
     def _bucketize_labels(self, labels):
-        boundaries = torch.linspace(0, 1, self.bucketize_labels)[1:]
+        boundaries = torch.linspace(0, 1, self.num_buckets)[1:]
         return torch.bucketize(labels, boundaries)
 
 
@@ -117,8 +118,8 @@ class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
     and the spans are recomputed accordingly.
     """
 
-    def __init__(self, tokenizer_name, pair_targets: bool):
-        super().__init__(pair_targets)
+    def __init__(self, tokenizer_name, single_span: bool):
+        super().__init__(single_span)
         self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
         spacy.cli.download('en_core_web_sm-2.1.0', direct=True)
         self.spacy_tokenizer = spacy.load('en_core_web_sm').tokenizer
@@ -130,12 +131,12 @@ class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
         :return: the subject model input representation.
         """
 
-        if self.pair_targets:
+        if self.single_span:
+            new_spans = self._retokenize_spans(input_text, spans)
+        else:
             new_spans1 = self._retokenize_spans(input_text, spans[0])
             new_spans2 = self._retokenize_spans(input_text, spans[1])
             new_spans = (new_spans1, new_spans2)
-        else:
-            new_spans = self._retokenize_spans(input_text, spans)
 
         tokens_full = self.tokenizer(*input_text.split(' [SEP] '), truncation=True)
         return tokens_full, new_spans, torch.tensor(labels)
