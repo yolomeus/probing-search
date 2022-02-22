@@ -1,6 +1,8 @@
 defaults:
   - task: single_span_class
+  - preprocessor: bert_retokenization
 
+_target_: datamodule.dataset.JSONLDataset
 name: msm_ner
 
 raw_file: data/msm/ner/msmarco_ner_60000_10_2022_01_14-16-41-48.json

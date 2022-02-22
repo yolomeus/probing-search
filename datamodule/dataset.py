@@ -1,17 +1,40 @@
 import json
+from abc import ABC, abstractmethod
+from copy import deepcopy
 
 import torch
 from hydra.utils import to_absolute_path
 from torch.utils.data import Dataset
 
+from datamodule import DatasetSplit
 from preprocessor import Preprocessor
 
 
-class JSONLDataset(Dataset):
+class TrainValTestDataset(Dataset, ABC):
+    @abstractmethod
+    def get_split(self, split: DatasetSplit) -> Dataset:
+        """
+
+        """
+
+
+class JSONLDataset(TrainValTestDataset):
     """A dataset that reads dict instances from a jsonl file into memory, and applies preprocessing to each instance.
     """
 
-    def __init__(self, task, filepath, preprocessor: Preprocessor, labels_to_onehot: bool, label2id=None):
+    def __init__(self,
+                 name,
+                 task,
+                 train_file,
+                 val_file,
+                 test_file,
+                 preprocessor: Preprocessor,
+                 labels_to_onehot: bool,
+                 num_train_samples,
+                 num_test_samples,
+                 num_classes,
+                 raw_file=None,
+                 label2id=None):
         """
 
         :param task: name of the task the dataset will be used for.
@@ -20,31 +43,57 @@ class JSONLDataset(Dataset):
         :param filepath: path to the jsonl file to load instances from.
         """
 
-        self._task = task
-        self._filepath = filepath
-        self._preprocessor = preprocessor
+        self.name = name
+        self.task = task
+
+        self.num_train_samples = num_train_samples
+        self.num_test_samples = num_test_samples
+        self.num_classes = num_classes
+
+        self.raw_file = raw_file
+
+        self.train_file = train_file
+        self.val_file = val_file
+        self.test_file = test_file
+
+        self.preprocessor = preprocessor
+
         self._labels_to_onehot = labels_to_onehot
         self._label2id = label2id
 
-        self.instances = self._init_instances()
+        self.instances = None
+
+    def get_split(self, split: DatasetSplit) -> Dataset:
+        self._init_instances(split)
+        return deepcopy(self)
 
     def __getitem__(self, index):
         x = self.instances[index]
 
         spans, labels = self._unpack_inputs(x)
-        subject_in, new_spans, new_labels = self._preprocessor(x['text'], spans, labels)
+        subject_in, new_spans, new_labels = self.preprocessor(x['text'], spans, labels)
 
         return subject_in, new_spans, new_labels
 
     def __len__(self):
         return len(self.instances)
 
-    def _init_instances(self):
+    def _init_instances(self, split: DatasetSplit):
         """Read instances, convert labels to one-hot encodings and exclude examples with no targets if needed for task.
 
         :return: a tuple of edge probing instances.
         """
-        with open(to_absolute_path(self._filepath), 'r') as fp:
+
+        if split == DatasetSplit.TRAIN:
+            filepath = self.train_file
+        elif split == DatasetSplit.VALIDATION:
+            filepath = self.val_file
+        elif split == DatasetSplit.TEST:
+            filepath = self.test_file
+        else:
+            raise NotImplementedError()
+
+        with open(to_absolute_path(filepath), 'r') as fp:
             instances = tuple(json.loads(line) for line in fp)
 
         # filter out instances with no target spans
@@ -62,7 +111,7 @@ class JSONLDataset(Dataset):
                     else:
                         target['label'] = label_id
 
-        return instances
+        self.instances = instances
 
     def _unpack_inputs(self, x):
         """Unpack spans and labels from an edge probing instance.
@@ -76,7 +125,7 @@ class JSONLDataset(Dataset):
             # we will need to compute spans dynamically
             return None, [t['label'] for t in x['targets']]
 
-        if not self._task.single_span:
+        if not self.task.single_span:
             spans1, spans2, labels = zip(*[(t['span1'], t['span2'], t['label'])
                                            for t in x['targets']])
             spans = (spans1, spans2)

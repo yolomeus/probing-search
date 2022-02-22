@@ -1,6 +1,8 @@
 defaults:
   - task: double_span_score
+  - preprocessor: bert
 
+_target_: datamodule.dataset.JSONLDataset
 name: msm_bm25
 
 raw_file: data/msm/bm25/msmarco_bm25_dataset.json
@@ -8,6 +10,8 @@ raw_file: data/msm/bm25/msmarco_bm25_dataset.json
 train_file: data/msm/bm25/train.jsonl
 val_file: data/msm/bm25/validation.jsonl
 test_file: data/msm/bm25/test.jsonl
+
+labels_to_onehot: False
 
 num_train_samples: 40000
 num_test_samples: 20000

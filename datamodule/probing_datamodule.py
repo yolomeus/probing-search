@@ -7,13 +7,11 @@ from random import shuffle
 from typing import List, Optional
 
 from hydra.utils import to_absolute_path
-from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Subset
 
 from datamodule import DatasetSplit
-from datamodule.dataset import JSONLDataset
+from datamodule.dataset import TrainValTestDataset
 from datamodule.default_datamodule import AbstractDefaultDataModule, MultiPortionMixin
-from preprocessor import Preprocessor
 
 
 class ProbingDataModule(AbstractDefaultDataModule):
@@ -22,8 +20,7 @@ class ProbingDataModule(AbstractDefaultDataModule):
 
     def __init__(
             self,
-            dataset: DictConfig,
-            preprocessor: Preprocessor,
+            dataset: TrainValTestDataset,
             labels_to_onehot: bool,
             train_conf,
             test_conf,
@@ -44,7 +41,6 @@ class ProbingDataModule(AbstractDefaultDataModule):
         super().__init__(train_conf, test_conf, num_workers, pin_memory)
 
         self._dataset = dataset
-        self._preprocessor = preprocessor
 
         self._labels_to_onehot = labels_to_onehot
         self._label2id = None
@@ -54,18 +50,9 @@ class ProbingDataModule(AbstractDefaultDataModule):
             self._label2id = self.read_labels(self._dataset.label_file)
 
         if None in [self.train_ds, self.val_ds, self.test_ds]:
-            self.train_ds = self._build_ds(self._dataset.train_file)
-            self.val_ds = self._build_ds(self._dataset.val_file)
-            self.test_ds = self._build_ds(self._dataset.test_file)
-
-    def _build_ds(self, filepath):
-        return JSONLDataset(
-            self._dataset.task,
-            filepath,
-            self._preprocessor,
-            self._labels_to_onehot,
-            self._label2id
-        )
+            self.train_ds = self._dataset.get_split(DatasetSplit.TRAIN)
+            self.val_ds = self._dataset.get_split(DatasetSplit.VALIDATION)
+            self.test_ds = self._dataset.get_split(DatasetSplit.TEST)
 
     @staticmethod
     def read_labels(label_file):
@@ -75,7 +62,8 @@ class ProbingDataModule(AbstractDefaultDataModule):
 
     def build_collate_fn(self, split: DatasetSplit = None):
         # the preprocessor decides how to collate a batch as it knows what a single instance looks like.
-        return self._preprocessor.collate
+
+        return self._dataset.preprocessor.collate
 
     def prepare_data(self) -> None:
         if self._dataset.raw_file is not None:
@@ -190,7 +178,6 @@ class MDLProbingDataModule(MultiPortionMixin, ProbingDataModule):
             portions: List,
             shuffle_first: bool,
             dataset,
-            preprocessor,
             labels_to_onehot: bool,
             train_conf,
             test_conf,
@@ -214,7 +201,6 @@ class MDLProbingDataModule(MultiPortionMixin, ProbingDataModule):
             portions,
             shuffle_first,
             dataset,
-            preprocessor,
             labels_to_onehot,
             train_conf,
             test_conf,

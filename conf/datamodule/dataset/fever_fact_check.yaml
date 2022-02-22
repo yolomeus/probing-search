@@ -1,5 +1,8 @@
 defaults:
   - task: double_span_class
+  - preprocessor: bert
+
+_target_: datamodule.dataset.JSONLDataset
 
 name: fever_fact_check
 

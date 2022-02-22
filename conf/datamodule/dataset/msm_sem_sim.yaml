@@ -1,6 +1,8 @@
 defaults:
   - task: double_span_score
+  - preprocessor: bert
 
+_target_: datamodule.dataset.JSONLDataset
 name: msm_sem_sim
 
 raw_file: data/msm/sem_sim/msmarco_sem_sim_60000_10_2022_01_14-16-58-24.json
