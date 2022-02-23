@@ -1,18 +1,28 @@
 import json
+import os
 from abc import ABC, abstractmethod
 from copy import deepcopy
+from itertools import chain
 
 import torch
 from hydra.utils import to_absolute_path
 from torch.utils.data import Dataset
 
 from datamodule import DatasetSplit
+from datamodule.dataset_utils import split_dataset, min_max_normalize, export_splits
+from logger.utils import get_logger
 from preprocessor import Preprocessor
 
 
 class TrainValTestDataset(Dataset, ABC):
     @abstractmethod
     def get_split(self, split: DatasetSplit) -> Dataset:
+        """
+
+        """
+
+    @abstractmethod
+    def prepare_data(self):
         """
 
         """
@@ -40,9 +50,9 @@ class JSONLDataset(TrainValTestDataset):
         :param task: name of the task the dataset will be used for.
         :param label2id: a mapping from string labels to integer ids.
         :param preprocessor: preprocessor to be applied to each instance.
-        :param filepath: path to the jsonl file to load instances from.
         """
 
+        self.log = get_logger(self)
         self.name = name
         self.task = task
 
@@ -62,10 +72,6 @@ class JSONLDataset(TrainValTestDataset):
         self._label2id = label2id
 
         self.instances = None
-
-    def get_split(self, split: DatasetSplit) -> Dataset:
-        self._init_instances(split)
-        return deepcopy(self)
 
     def __getitem__(self, index):
         x = self.instances[index]
@@ -133,3 +139,36 @@ class JSONLDataset(TrainValTestDataset):
             spans, labels = zip(*[(t['span1'], t['label']) for t in x['targets']])
 
         return spans, labels
+
+    def get_split(self, split: DatasetSplit) -> Dataset:
+        self._init_instances(split)
+        return deepcopy(self)
+
+    def prepare_data(self):
+        if self.raw_file is not None:
+            raw_dataset = to_absolute_path(self.raw_file)
+            to_be_generated = list(map(to_absolute_path,
+                                       [self.train_file, self.val_file, self.test_file]))
+
+            if not all(map(os.path.exists, to_be_generated)):
+                self.log.info('Generating dataset splits')
+                # load raw data
+                with open(raw_dataset, 'r', encoding='utf8') as fp:
+                    ds = json.load(fp)
+
+                # create random splits
+                train_ds, val_ds, test_ds = split_dataset(ds,
+                                                          self.num_train_samples,
+                                                          self.num_test_samples)
+
+                # normalize target scores between 0 and 1
+                if self.task.normalize_target:
+                    ds_splits, min_score_train, max_score_train = min_max_normalize(train_ds, val_ds, test_ds)
+                    labels = None
+                else:
+                    ds_splits, min_score_train, max_score_train = (train_ds, val_ds, test_ds), None, None
+                    labels = set(chain.from_iterable([[t['label'] for t in x['targets']] for x in ds]))
+
+                # export splits as jsonl files
+                output_dir = to_absolute_path(os.path.split(to_be_generated[0])[0])
+                export_splits(output_dir, ds_splits, labels, min_score_train, max_score_train)

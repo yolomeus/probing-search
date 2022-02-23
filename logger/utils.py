@@ -1,5 +1,6 @@
 """Training loop related utilities.
 """
+from logging import getLogger
 from typing import List
 
 from hydra.utils import instantiate
@@ -72,3 +73,9 @@ class Metrics(Module):
         """
         name = obj.__class__.__name__
         return name.lower() if lower else name
+
+
+def get_logger(obj):
+    """Get a python logging logger for an object containing its module and class name when logging.
+    """
+    return getLogger('.'.join([obj.__module__, obj.__class__.__name__]))
