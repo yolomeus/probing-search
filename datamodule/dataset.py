@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from itertools import chain
 
+import h5py
 import torch
 from hydra.utils import to_absolute_path
 from torch.utils.data import Dataset
@@ -176,3 +177,59 @@ class JSONLDataset(TrainValTestDataset):
 
     def collate(self, data):
         return self.preprocessor.collate(data)
+
+
+class RankingDataset(TrainValTestDataset):
+    def __init__(self, name, task, data_file, train_file, val_file, test_file, preprocessor: Preprocessor, num_classes):
+        self.name = name
+        self.task = task
+        self.num_classes = num_classes
+
+        self._data_file = to_absolute_path(data_file)
+
+        self._train_file = to_absolute_path(train_file)
+        self._val_file = to_absolute_path(val_file)
+        self._test_file = to_absolute_path(test_file)
+
+        self.current_file = None
+        self.preprocessor = preprocessor
+
+    def __getitem__(self, index):
+        with h5py.File(self.current_file, "r") as fp:
+            q_id = fp["q_ids"][index]
+            doc_id = fp["doc_ids"][index]
+            label = torch.tensor(fp["labels"][index]).unsqueeze(0)
+
+        with h5py.File(self._data_file, "r") as fp:
+            query = fp["queries"].asstr()[q_id]
+            doc = fp["docs"].asstr()[doc_id]
+
+        input_text = query + ' [SEP] ' + doc
+        subject_in, new_spans, new_labels = self.preprocessor(input_text, labels=label)
+
+        # return the internal query and document IDs here
+        return q_id, doc_id, subject_in, new_spans, label
+
+    def __len__(self):
+        with h5py.File(self.current_file, "r") as fp:
+            return len(fp["q_ids"])
+
+    def get_split(self, split: DatasetSplit) -> Dataset:
+        if split == DatasetSplit.TRAIN:
+            self.current_file = self._train_file
+        elif split == DatasetSplit.VALIDATION:
+            self.current_file = self._val_file
+        elif split == DatasetSplit.TEST:
+            self.current_file = self._test_file
+        else:
+            raise NotImplementedError()
+
+        return deepcopy(self)
+
+    def prepare_data(self):
+        pass
+
+    def collate(self, data):
+        q_ids, _, text_pairs, spans, labels = zip(*data)
+        (encodings, spans), labels = self.preprocessor.collate(zip(text_pairs, spans, labels))
+        return q_ids, (encodings, spans), labels

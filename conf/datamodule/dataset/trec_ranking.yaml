@@ -1,0 +1,15 @@
+defaults:
+  - task: double_span_class
+  - preprocessor: bert
+
+_target_: datamodule.dataset.RankingDataset
+
+name: trec_ranking
+
+data_file: data/trec/trecdl_passage_2019/data.h5
+train_file: data/trec/trecdl_passage_2019/fold_0/train_pointwise.h5
+val_file: data/trec/trecdl_passage_2019/fold_0/val.h5
+test_file: data/trec/trecdl_passage_2019/fold_0/test.h5
+
+
+num_classes: 3
