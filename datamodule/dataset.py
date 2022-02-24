@@ -53,6 +53,7 @@ class JSONLDataset(TrainValTestDataset):
         """
 
         self.log = get_logger(self)
+
         self.name = name
         self.task = task
 
@@ -172,3 +173,6 @@ class JSONLDataset(TrainValTestDataset):
                 # export splits as jsonl files
                 output_dir = to_absolute_path(os.path.split(to_be_generated[0])[0])
                 export_splits(output_dir, ds_splits, labels, min_score_train, max_score_train)
+
+    def collate(self, data):
+        return self.preprocessor.collate(data)

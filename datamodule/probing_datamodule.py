@@ -25,8 +25,6 @@ class ProbingDataModule(AbstractDefaultDataModule):
         """
 
         :param dataset: config with attributes `train_file`, `dev_file`, `test_file` which are paths to jsonl files.
-        :param preprocessor: the preprocessor to apply to each instance and use for batch collation.
-
         :param train_conf: global training configuration
         :param test_conf: global test configuration
         :param num_workers: num_workers argument passed to all DataLoaders.
@@ -58,7 +56,7 @@ class ProbingDataModule(AbstractDefaultDataModule):
     def build_collate_fn(self, split: DatasetSplit = None):
         # the preprocessor decides how to collate a batch as it knows what a single instance looks like.
 
-        return self._dataset.preprocessor.collate
+        return self._dataset.collate
 
     def prepare_data(self) -> None:
         self._dataset.prepare_data()
