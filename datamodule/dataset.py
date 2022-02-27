@@ -208,7 +208,6 @@ class RankingDataset(TrainValTestDataset):
         input_text = query + ' [SEP] ' + doc
         subject_in, new_spans, new_labels = self.preprocessor(input_text, labels=label)
 
-        # return the internal query and document IDs here
         return q_id, doc_id, subject_in, new_spans, new_labels
 
     def __len__(self):
@@ -233,4 +232,8 @@ class RankingDataset(TrainValTestDataset):
     def collate(self, data):
         q_ids, _, text_pairs, spans, labels = zip(*data)
         (encodings, spans), labels = self.preprocessor.collate(zip(text_pairs, spans, labels))
+
+        q_ids = torch.tensor(q_ids, dtype=torch.long).unsqueeze(1)
+        labels = labels.unsqueeze(1)
+
         return q_ids, (encodings, spans), labels
