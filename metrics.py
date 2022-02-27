@@ -1,8 +1,9 @@
 from typing import Any
 
 import torch
+from torch import Tensor
 from torch.nn import functional as F
-from torchmetrics import Metric
+from torchmetrics import Metric, RetrievalPrecision, RetrievalMAP, RetrievalMRR, RetrievalNormalizedDCG
 
 
 class MDL(Metric):
@@ -52,3 +53,42 @@ class Compression(Metric):
     def compute(self) -> Any:
         uniform_codelength = self.num_targets * torch.log2(self.num_classes)
         return uniform_codelength / self.mdl
+
+
+# ----- Retrieval ----- #
+
+class CustomRetrievalMixin:
+    """Allows applying a torchmetrics RetrievalMetric to accept 2D predictions, by taking the second
+    dimension as relevance score.
+    """
+
+    def update(self, preds: Tensor, target: Tensor, indexes: Tensor) -> None:
+        super().update(preds[:, -1], target, indexes)
+
+
+class MAP(CustomRetrievalMixin, RetrievalMAP):
+    """ """
+
+
+class MRR(CustomRetrievalMixin, RetrievalMRR):
+    """ """
+
+
+class PrecisionAt10(CustomRetrievalMixin, RetrievalPrecision):
+    def __init__(self):
+        super().__init__(k=10)
+
+
+class PrecisionAt20(CustomRetrievalMixin, RetrievalPrecision):
+    def __init__(self):
+        super().__init__(k=20)
+
+
+class NDCGAt10(CustomRetrievalMixin, RetrievalNormalizedDCG):
+    def __init__(self):
+        super().__init__(k=10)
+
+
+class NDCGAt20(CustomRetrievalMixin, RetrievalNormalizedDCG):
+    def __init__(self):
+        super().__init__(k=20)

@@ -74,7 +74,7 @@ class RankingLoop(DefaultClassificationLoop):
     def training_step(self, batch, batch_idx):
         q_ids, x, y_true = batch
         y_pred = self.model(x)
-        loss = self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.TRAIN, indexes=q_ids)
+        loss = self.loss(y_pred, y_true)
 
         return {'loss': loss}
 
