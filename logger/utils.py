@@ -36,7 +36,7 @@ class Metrics(Module):
         elif to_probabilities is None:
             self.to_probabilities = Identity()
 
-    def forward(self, loop, y_pred, y_true, split: DatasetSplit):
+    def forward(self, loop, y_pred, y_true, split: DatasetSplit, **kwargs):
         y_prob = self.to_probabilities(y_pred)
 
         if split == DatasetSplit.TRAIN:
@@ -47,7 +47,12 @@ class Metrics(Module):
             metrics = self.val_metrics
 
         for metric in metrics:
-            metric(y_prob, y_true)
+            # pass kwargs if accepted by metric
+            try:
+                metric(y_prob, y_true, **kwargs)
+            except TypeError:
+                metric(y_prob, y_true)
+
             loop.log(f'{split.value}/' + self.classname(metric),
                      metric,
                      on_step=False,
@@ -60,8 +65,8 @@ class Metrics(Module):
         if split == DatasetSplit.TRAIN:
             return loss
 
-    def metric_log(self, loop, y_pred, y_true, split: DatasetSplit):
-        return self.forward(loop, y_pred, y_true, split)
+    def metric_log(self, loop, y_pred, y_true, split: DatasetSplit, **kwargs):
+        return self.forward(loop, y_pred, y_true, split, **kwargs)
 
     @staticmethod
     def classname(obj, lower=True):
