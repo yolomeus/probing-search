@@ -1,9 +1,13 @@
+from abc import ABC
 from typing import Any
 
 import torch
-from torch import Tensor
+from torch import Tensor, tensor
 from torch.nn import functional as F
 from torchmetrics import Metric, RetrievalPrecision, RetrievalMAP, RetrievalMRR, RetrievalNormalizedDCG
+from torchmetrics.retrieval import RetrievalMetric
+from torchmetrics.utilities.checks import _check_retrieval_inputs
+from torchmetrics.utilities.data import get_group_indexes
 
 
 class MDL(Metric):
@@ -57,21 +61,78 @@ class Compression(Metric):
 
 # ----- Retrieval ----- #
 
-class CustomRetrievalMixin:
-    """Allows applying a torchmetrics RetrievalMetric to accept 2D predictions, by taking the second
-    dimension as relevance score.
+
+class CustomRetrievalMixin(RetrievalMetric, ABC):
+    """Mixin that can be used on subclasses of `RetrievalMetric` to change the way state is tracked. Unlike
+    `RetrievalMetric` this implementation doesn't use lists for tracking state which caused massive slowdown when
+    tracking large amounts of predictions.
+    Note that this implementation stores large tensors instead and might cause higher gpu memory usage.
     """
 
+    indexes: Tensor
+    preds: Tensor
+    target: Tensor
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # replace original state variables
+        self.add_state("indexes", default=torch.empty(0, dtype=torch.int32), dist_reduce_fx=None)
+        self.add_state("preds", default=torch.empty(0, dtype=torch.float32), dist_reduce_fx=None)
+        self.add_state("target", default=torch.empty(0, dtype=torch.int32), dist_reduce_fx=None)
+        self.add_state("idx", default=torch.zeros((1,), dtype=torch.long))
+
     def update(self, preds: Tensor, target: Tensor, indexes: Tensor) -> None:
-        super().update(preds[:, -1], target, indexes)
+        # we expect 2D predictions with the second dimension representing a relevance score.
+        preds = preds[:, -1]
+
+        if indexes is None:
+            raise ValueError("Argument `indexes` cannot be None")
+
+        indexes, preds, target = _check_retrieval_inputs(
+            indexes, preds, target, allow_non_binary_target=self.allow_non_binary_target, ignore_index=self.ignore_index
+        )
+
+        # instead of appending to python lists, we concatenate to our state tensors.
+        self.indexes = torch.cat([self.indexes, indexes])
+        self.preds = torch.cat([self.preds, preds])
+        self.target = torch.cat([self.target, target])
+
+        self.idx += len(indexes)
+
+    def compute(self) -> Tensor:
+        # this is identical to `RetrievalMetric`´s compute except that we do not have to concatenate the python lists
+        # as a first step
+        indexes = self.indexes
+        preds = self.preds
+        target = self.target
+
+        res = []
+        groups = get_group_indexes(indexes)
+
+        for group in groups:
+            mini_preds = preds[group]
+            mini_target = target[group]
+
+            if not mini_target.sum():
+                if self.empty_target_action == "error":
+                    raise ValueError("`compute` method was provided with a query with no positive target.")
+                if self.empty_target_action == "pos":
+                    res.append(tensor(1.0))
+                elif self.empty_target_action == "neg":
+                    res.append(tensor(0.0))
+            else:
+                # ensure list contains only float tensors
+                res.append(self._metric(mini_preds, mini_target))
+
+        return torch.stack([x.to(preds) for x in res]).mean() if res else tensor(0.0).to(preds)
 
 
 class MAP(CustomRetrievalMixin, RetrievalMAP):
-    """ """
+    """Mean Average Precision"""
 
 
 class MRR(CustomRetrievalMixin, RetrievalMRR):
-    """ """
+    """Mean Reciprocal Rank"""
 
 
 class PrecisionAt10(CustomRetrievalMixin, RetrievalPrecision):

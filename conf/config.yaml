@@ -34,12 +34,18 @@ metrics:
     - _target_: torchmetrics.F1
       average: 'macro'
       num_classes: ${datamodule.dataset.num_classes}
+    - _target_: metrics.MAP
+    - _target_: metrics.MRR
+    - _target_: metrics.PrecisionAt10
+    - _target_: metrics.PrecisionAt20
+    - _target_: metrics.NDCGAt10
+    - _target_: metrics.NDCGAt20
 
 
 log_gradients: False
 logger: # set to null to use PL default logging
   _target_: logger.loggers.WandbMinMaxLogger
-  project: probing-search
+  project: debug
   tags:
     - layer:${model.pooler.layer_to_probe}
     - ${datamodule.dataset.name}
