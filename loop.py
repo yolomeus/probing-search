@@ -76,7 +76,7 @@ class RankingLoop(DefaultClassificationLoop):
         y_pred = self.model(x)
         loss = self.loss(y_pred, y_true)
 
-        self.log('train/loss', loss, on_step=True, on_epoch=True)
+        self.log('train/loss', loss, on_step=True, on_epoch=True, batch_size=len(y_true))
         return {'loss': loss}
 
     def validation_step(self, batch, batch_idx):
