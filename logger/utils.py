@@ -1,11 +1,13 @@
 """Training loop related utilities.
 """
+import inspect
 from logging import getLogger
 from typing import List
 
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from torch.nn import Module, ModuleList, Softmax, Sigmoid, Identity
+from torchmetrics.retrieval import RetrievalMetric
 
 from datamodule import DatasetSplit
 
@@ -48,9 +50,9 @@ class Metrics(Module):
 
         for metric in metrics:
             # pass kwargs if accepted by metric
-            try:
+            if issubclass(type(metric), RetrievalMetric):
                 metric(y_prob, y_true, **kwargs)
-            except TypeError:
+            else:
                 metric(y_prob, y_true)
 
             loop.log(f'{split.value}/' + self.classname(metric),
