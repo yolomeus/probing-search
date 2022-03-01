@@ -1,15 +1,12 @@
 defaults:
-  # sub-configs to include by default
-  - model: probing_pair
+  - procedure: mdl_probe_training
   - datamodule: mdl_probing
   - loop: default_loop
+  - model: probing_pair
 
 gpus: 1
 num_workers: 8
 random_seed: 1590258941
-
-compute_mdl: True
-limit_mdl_val_steps: 1.0 # 1.0 = 100%
 
 training:
   epochs: 50
@@ -36,18 +33,11 @@ metrics:
     - _target_: torchmetrics.F1
       average: 'macro'
       num_classes: ${datamodule.dataset.num_classes}
-    - _target_: metrics.MAP
-    - _target_: metrics.MRR
-    - _target_: metrics.PrecisionAt10
-    - _target_: metrics.PrecisionAt20
-    - _target_: metrics.NDCGAt10
-    - _target_: metrics.NDCGAt20
-
 
 log_gradients: False
 logger: # set to null to use PL default logging
   _target_: logger.loggers.WandbMinMaxLogger
-  project: debug
+  project: probing-search
   tags:
     - layer:${model.pooler.layer_to_probe}
     - ${datamodule.dataset.name}

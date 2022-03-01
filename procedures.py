@@ -125,14 +125,14 @@ class MDLOnlineCoding(BaseTraining):
     of the dataset.
     """
 
-    def __init__(self, datamodule: MDLProbingDataModule, experiment, cfg: DictConfig):
+    def __init__(self, datamodule: MDLProbingDataModule, experiment, limit_mdl_val_steps: int, cfg: DictConfig):
         super().__init__(cfg)
 
         self.experiment = experiment
         self.logger = self.build_logger(self.build_loop(), experiment=self.experiment)
 
         num_classes = cfg.datamodule.dataset.num_classes
-        self.limit_mdl_val_steps = cfg.limit_mdl_val_steps
+        self.limit_mdl_val_steps = limit_mdl_val_steps
         self.mdl = MDL(len(datamodule.portions) - 1, num_classes)
         self.compression = Compression(num_classes)
 
@@ -212,10 +212,12 @@ class MDLProbeTraining(Procedure):
     """First, compute and log MDL and Compression using online-coding, then perform a full training run.
     """
 
-    def __init__(self, cfg):
+    def __init__(self, cfg: DictConfig, limit_mdl_val_steps: int):
         self.default_training = DefaultTraining(cfg)
         self.online_coding = MDLOnlineCoding(self.default_training.datamodule,
+
                                              self.default_training.logger.experiment,
+                                             limit_mdl_val_steps,
                                              cfg)
 
     def run(self):
