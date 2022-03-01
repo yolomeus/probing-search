@@ -7,7 +7,9 @@ defaults:
 gpus: 1
 num_workers: 8
 random_seed: 1590258941
+
 compute_mdl: True
+limit_mdl_val_steps: 1.0 # 1.0 = 100%
 
 training:
   epochs: 50

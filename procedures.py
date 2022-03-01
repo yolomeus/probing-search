@@ -32,7 +32,7 @@ class BaseTraining(Procedure, ABC):
         self.log = logging.getLogger('.'.join([self.__module__, self.__class__.__name__]))
         self.cfg = cfg
 
-    def build_trainer(self, logger, callbacks=None):
+    def build_trainer(self, logger, callbacks=None, **kwargs):
         train_cfg = self.cfg.training
         trainer = Trainer(
             max_epochs=train_cfg.epochs,
@@ -41,7 +41,8 @@ class BaseTraining(Procedure, ABC):
             callbacks=callbacks,
             accumulate_grad_batches=train_cfg.accumulate_batches,
             gradient_clip_val=train_cfg.gradient_clip_val,
-            gradient_clip_algorithm='norm'
+            gradient_clip_algorithm='norm',
+            **kwargs
         )
 
         return trainer
@@ -131,6 +132,7 @@ class MDLOnlineCoding(BaseTraining):
         self.logger = self.build_logger(self.build_loop(), experiment=self.experiment)
 
         num_classes = cfg.datamodule.dataset.num_classes
+        self.limit_mdl_val_steps = cfg.limit_mdl_val_steps
         self.mdl = MDL(len(datamodule.portions) - 1, num_classes)
         self.compression = Compression(num_classes)
 
@@ -166,7 +168,9 @@ class MDLOnlineCoding(BaseTraining):
                                      'portion_size': portion_size})
 
             ckpt_path = os.path.join(os.getcwd(), f'checkpoints/mdl/portion_{i:02d}/')
-            trainer = self.build_trainer(logger=portion_log, callbacks=self.build_callbacks(ckpt_path))
+            trainer = self.build_trainer(logger=portion_log,
+                                         callbacks=self.build_callbacks(ckpt_path),
+                                         limit_val_batches=self.limit_mdl_val_steps)
             trainer.fit(loop, datamodule)
 
             self._update_mdl(trainer, loop, i)
