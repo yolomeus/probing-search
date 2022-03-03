@@ -2,4 +2,3 @@ defaults:
   - dataset: msm_bm25
 
 _target_: datamodule.probing_datamodule.ProbingDataModule
-labels_to_onehot: False

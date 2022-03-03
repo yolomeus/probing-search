@@ -1,6 +1,5 @@
 from typing import List, Optional
 
-from hydra.utils import to_absolute_path
 from torch.utils.data import DataLoader, Subset
 
 from datamodule import DatasetSplit
@@ -16,7 +15,6 @@ class ProbingDataModule(AbstractDefaultDataModule):
     def __init__(
             self,
             dataset: TrainValTestDataset,
-            labels_to_onehot: bool,
             train_conf,
             test_conf,
             num_workers,
@@ -35,23 +33,11 @@ class ProbingDataModule(AbstractDefaultDataModule):
 
         self._dataset = dataset
 
-        self._labels_to_onehot = labels_to_onehot
-        self._label2id = None
-
     def setup(self, stage: Optional[str] = None) -> None:
-        if hasattr(self._dataset, 'label_file') and self._label2id is None:
-            self._label2id = self.read_labels(self._dataset.label_file)
-
         if None in [self.train_ds, self.val_ds, self.test_ds]:
             self.train_ds = self._dataset.get_split(DatasetSplit.TRAIN)
             self.val_ds = self._dataset.get_split(DatasetSplit.VALIDATION)
             self.test_ds = self._dataset.get_split(DatasetSplit.TEST)
-
-    @staticmethod
-    def read_labels(label_file):
-        with open(to_absolute_path(label_file), 'r') as fp:
-            label2id = {x.rstrip(): i for i, x in enumerate(fp)}
-        return label2id
 
     def build_collate_fn(self, split: DatasetSplit = None):
         # the preprocessor decides how to collate a batch as it knows what a single instance looks like.
@@ -72,7 +58,6 @@ class MDLProbingDataModule(MultiPortionMixin, ProbingDataModule):
             portions: List,
             shuffle_first: bool,
             dataset,
-            labels_to_onehot: bool,
             train_conf,
             test_conf,
             num_workers,
@@ -92,7 +77,6 @@ class MDLProbingDataModule(MultiPortionMixin, ProbingDataModule):
             portions,
             shuffle_first,
             dataset,
-            labels_to_onehot,
             train_conf,
             test_conf,
             num_workers,

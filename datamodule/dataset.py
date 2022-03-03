@@ -41,12 +41,12 @@ class JSONLDataset(TrainValTestDataset):
                  val_file,
                  test_file,
                  preprocessor: Preprocessor,
-                 labels_to_onehot: bool,
                  num_train_samples,
                  num_test_samples,
                  num_classes,
+                 labels_to_onehot: bool = False,
                  raw_file=None,
-                 label2id=None):
+                 label_file=None):
         """
 
         :param task: name of the task the dataset will be used for.
@@ -68,11 +68,11 @@ class JSONLDataset(TrainValTestDataset):
         self.train_file = train_file
         self.val_file = val_file
         self.test_file = test_file
+        self._label2id = self.read_labels(label_file)
 
         self.preprocessor = preprocessor
 
         self._labels_to_onehot = labels_to_onehot
-        self._label2id = label2id
 
         self.instances = None
 
@@ -86,6 +86,12 @@ class JSONLDataset(TrainValTestDataset):
 
     def __len__(self):
         return len(self.instances)
+
+    @staticmethod
+    def read_labels(label_file):
+        with open(to_absolute_path(label_file), 'r') as fp:
+            label2id = {x.rstrip(): i for i, x in enumerate(fp)}
+        return label2id
 
     def _init_instances(self, split: DatasetSplit):
         """Read instances, convert labels to one-hot encodings and exclude examples with no targets if needed for task.
