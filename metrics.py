@@ -136,20 +136,20 @@ class MRR(CustomRetrievalMixin, RetrievalMRR):
 
 
 class PrecisionAt10(CustomRetrievalMixin, RetrievalPrecision):
-    def __init__(self):
-        super().__init__(k=10)
+    def __init__(self, **kwargs):
+        super().__init__(k=10, **kwargs)
 
 
 class PrecisionAt20(CustomRetrievalMixin, RetrievalPrecision):
-    def __init__(self):
-        super().__init__(k=20)
+    def __init__(self, **kwargs):
+        super().__init__(k=20, **kwargs)
 
 
 class NDCGAt10(CustomRetrievalMixin, RetrievalNormalizedDCG):
-    def __init__(self):
-        super().__init__(k=10)
+    def __init__(self, **kwargs):
+        super().__init__(k=10, **kwargs)
 
 
 class NDCGAt20(CustomRetrievalMixin, RetrievalNormalizedDCG):
-    def __init__(self):
-        super().__init__(k=20)
+    def __init__(self, **kwargs):
+        super().__init__(k=20, **kwargs)

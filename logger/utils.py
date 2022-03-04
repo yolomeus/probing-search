@@ -1,6 +1,5 @@
 """Training loop related utilities.
 """
-import inspect
 from logging import getLogger
 from typing import List
 
@@ -26,8 +25,10 @@ class Metrics(Module):
         """
         super().__init__()
 
-        per_split_metrics = [[] if metrics_configs is None else [instantiate(metric) for metric in metrics_configs]
-                             for _ in range(3)]
+        per_split_metrics = [
+            [] if metrics_configs is None else [instantiate(metric, compute_on_step=False) for metric in
+                                                metrics_configs]
+            for _ in range(3)]
         self.train_metrics, self.val_metrics, self.test_metrics = [ModuleList(metrics) for metrics in per_split_metrics]
         self.loss = loss
 
