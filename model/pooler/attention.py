@@ -54,4 +54,4 @@ class AttentionPooler(Module):
         pooled_spans = [att_vec.T @ embed_span
                         for att_vec, embed_span in zip(embed_spans, att_vectors)]
 
-        return torch.stack(pooled_spans).squeeze()
+        return torch.stack(pooled_spans).squeeze(-1)
