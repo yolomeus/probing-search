@@ -12,3 +12,4 @@ val_file: data/trec/trecdl_passage_2019/fold_0/val.h5
 test_file: data/trec/trecdl_passage_2019/fold_0/test.h5
 
 num_classes: 2
+limit_train_samples: 40000

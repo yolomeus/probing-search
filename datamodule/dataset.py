@@ -3,12 +3,13 @@ import os
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from itertools import chain
+from random import Random
 
 import h5py
 import numpy as np
 import torch
 from hydra.utils import to_absolute_path
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Subset
 
 from datamodule import DatasetSplit
 from datamodule.dataset_utils import split_dataset, min_max_normalize, export_splits
@@ -187,10 +188,12 @@ class JSONLDataset(TrainValTestDataset):
 
 
 class RankingDataset(TrainValTestDataset):
-    def __init__(self, name, task, data_file, train_file, val_file, test_file, preprocessor: Preprocessor, num_classes):
+    def __init__(self, name, task, data_file, train_file, val_file, test_file, preprocessor: Preprocessor, num_classes,
+                 limit_train_samples=None):
         self.name = name
         self.task = task
         self.num_classes = num_classes
+        self.limit_train_samples = limit_train_samples
 
         self._data_file = to_absolute_path(data_file)
 
@@ -223,6 +226,11 @@ class RankingDataset(TrainValTestDataset):
     def get_split(self, split: DatasetSplit) -> Dataset:
         if split == DatasetSplit.TRAIN:
             self.current_file = self._train_file
+
+            if self.limit_train_samples is not None:
+                training_samples = Random(5823905).sample(range(len(self)), k=self.limit_train_samples)
+                return deepcopy(Subset(self, indices=training_samples))
+
         elif split == DatasetSplit.VALIDATION:
             self.current_file = self._val_file
         elif split == DatasetSplit.TEST:
