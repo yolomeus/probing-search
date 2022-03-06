@@ -5,6 +5,7 @@ import os.path
 from abc import abstractmethod, ABC
 from os import path, getcwd
 
+import torch
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from pytorch_lightning import Trainer
@@ -173,7 +174,9 @@ class MDLOnlineCoding(BaseTraining):
                                          limit_val_batches=self.limit_mdl_val_steps)
             trainer.fit(loop, datamodule)
 
-            self._update_mdl(trainer, loop, i)
+            with torch.no_grad():
+                self._update_mdl(trainer, loop, i)
+
             self.datamodule.next_portion()
 
             # cleanup prevents a multiprocessing issue where already closed handles are closed again
@@ -200,6 +203,10 @@ class MDLOnlineCoding(BaseTraining):
         """
         mdl = self.mdl.compute()
         compression = self.compression(mdl, self.datamodule.num_targets_total)
+
+        self.mdl.reset()
+        self.compression.reset()
+
         return mdl, compression
 
     def _postfix_logger(self, loop, i):
@@ -215,7 +222,6 @@ class MDLProbeTraining(Procedure):
     def __init__(self, cfg: DictConfig, limit_mdl_val_steps: int):
         self.default_training = DefaultTraining(cfg)
         self.online_coding = MDLOnlineCoding(self.default_training.datamodule,
-
                                              self.default_training.logger.experiment,
                                              limit_mdl_val_steps,
                                              cfg)
