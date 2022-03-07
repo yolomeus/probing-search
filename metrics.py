@@ -93,9 +93,9 @@ class CustomRetrievalMixin(RetrievalMetric, ABC):
         )
 
         # instead of appending to python lists, we concatenate to our state tensors.
-        self.indexes = torch.cat([self.indexes, indexes])
+        self.indexes = torch.cat([self.indexes, indexes.to(torch.int32)])
         self.preds = torch.cat([self.preds, preds])
-        self.target = torch.cat([self.target, target])
+        self.target = torch.cat([self.target, target.to(torch.int32)])
 
         self.idx += len(indexes)
 
