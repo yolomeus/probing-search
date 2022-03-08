@@ -82,6 +82,7 @@ class MDLProbingDataModule(MultiPortionMixin, ProbingDataModule):
             num_workers,
             pin_memory
         )
+        self._num_targets_total = None
 
     def predict_dataloader(self):
         pred_dl = DataLoader(
@@ -109,7 +110,9 @@ class MDLProbingDataModule(MultiPortionMixin, ProbingDataModule):
 
     @property
     def num_targets_total(self):
-        return sum(map(lambda x: len(x[-1]), iter(self.train_ds)))
+        if self._num_targets_total is None:
+            self._num_targets_total = sum(map(lambda x: len(x[-1]), iter(self.train_ds)))
+        return self._num_targets_total
 
     @property
     def num_targets_portion(self):
