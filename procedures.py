@@ -228,4 +228,5 @@ class MDLProbeTraining(Procedure):
 
     def run(self):
         self.online_coding.run()
+        del self.online_coding
         self.default_training.run()
