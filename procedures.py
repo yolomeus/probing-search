@@ -107,14 +107,14 @@ class DefaultTraining(BaseTraining):
     """A standard training run with a single fit and test run.
     """
 
-    def __init__(self, cfg: DictConfig):
+    def __init__(self, limit_val_steps: int, cfg: DictConfig):
         super().__init__(cfg)
 
         self.datamodule = self.build_datamodule()
         self.loop = self.build_loop()
 
         self.logger = self.build_logger(self.loop)
-        self.trainer = self.build_trainer(self.logger, self.build_callbacks())
+        self.trainer = self.build_trainer(self.logger, self.build_callbacks(), limit_val_batches=limit_val_steps)
 
     def run(self):
         self.trainer.fit(self.loop, datamodule=self.datamodule)
@@ -219,8 +219,8 @@ class MDLProbeTraining(Procedure):
     """First, compute and log MDL and Compression using online-coding, then perform a full training run.
     """
 
-    def __init__(self, cfg: DictConfig, limit_mdl_val_steps: int):
-        self.default_training = DefaultTraining(cfg)
+    def __init__(self, cfg: DictConfig, limit_mdl_val_steps: int, limit_full_run_val_steps: int):
+        self.default_training = DefaultTraining(limit_full_run_val_steps, cfg)
         self.online_coding = MDLOnlineCoding(self.default_training.datamodule,
                                              self.default_training.logger.experiment,
                                              limit_mdl_val_steps,

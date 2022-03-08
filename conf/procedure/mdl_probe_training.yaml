@@ -1,2 +1,3 @@
 _target_: procedures.MDLProbeTraining
 limit_mdl_val_steps: 1.0
+limit_full_run_val_steps: 1.0
