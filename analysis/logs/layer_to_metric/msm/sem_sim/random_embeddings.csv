@@ -1,2 +1,0 @@
-"Name","State","Runtime","Tags","End Time","model/subject_model/model_name","Created","model/pooler/layer_to_probe","val/accuracy/max","val/loss/min","test/accuracy","test/loss","mdl","compression"
-"earthy-dream-651","finished","3125","layer:0, msm_sem_sim","2022-01-26T03:10:06.000Z","random-embeddings","2022-01-26T02:18:01.000Z","0","0.9024999737739564","0.26678264141082764","0.8928999900817871","0.27704575657844543","14486.830078125","9.172270774841309"
