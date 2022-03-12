@@ -107,7 +107,7 @@ class DefaultTraining(BaseTraining):
     """A standard training run with a single fit and test run.
     """
 
-    def __init__(self, limit_val_steps: int, cfg: DictConfig):
+    def __init__(self, cfg: DictConfig, limit_val_steps: int):
         super().__init__(cfg)
 
         self.datamodule = self.build_datamodule()
