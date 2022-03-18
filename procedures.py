@@ -233,23 +233,42 @@ class MDLProbeTraining(Procedure):
 
 
 class TestOnly(BaseTraining):
-    def __init__(self, cfg, cfg_path, ckpt_path):
-        self.loaded_cfg = OmegaConf.load(to_absolute_path(cfg_path))
-        super().__init__(self.loaded_cfg)
+    """Load a model from an old config and a checkpoint file, then test it on the current datamodule.
+    """
 
-        self.ckpt_path = to_absolute_path(ckpt_path)
+    def __init__(self, cfg, model_cfg_path, ckpt_path):
+        """
+
+        :param cfg: the config used when calling this procedure
+        :param model_cfg_path: the config that was used to instantiate the model to be tested.
+        :param ckpt_path: path to the model checkpoint to test.
+        """
+        super().__init__(cfg)
+
+        self.loaded_cfg = OmegaConf.load(to_absolute_path(model_cfg_path))
         self.calling_cfg = cfg
 
-        self.datamodule = instantiate(self.calling_cfg.datamodule,
-                                      train_conf=self.cfg.training,
-                                      test_conf=self.cfg.testing,
-                                      num_workers=self.cfg.num_workers,
-                                      pin_memory=self.cfg.gpus > 0)
-        
+        self.ckpt_path = to_absolute_path(ckpt_path)
+
+        self.datamodule = self.build_datamodule()
         self.loop = self.build_loop()
 
-        self.logger = self.build_logger(self.loop)
+        self.logger = self.build_logger(self.loop, project='debug')
         self.trainer = self.build_trainer(self.logger, self.build_callbacks())
 
     def run(self):
         self.trainer.test(self.loop, ckpt_path=self.ckpt_path, datamodule=self.datamodule)
+
+    def build_loop(self):
+        model = instantiate(self.loaded_cfg.model)
+
+        self.log.info('model was initialized from old configuration for testing')
+
+        training_loop = instantiate(
+            self.cfg.loop,
+            self.cfg,
+            model=model,
+            # params argument for optimizer constructor
+            optimizer={'params': model.parameters()}
+        )
+        return training_loop
