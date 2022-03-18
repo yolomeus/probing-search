@@ -244,8 +244,10 @@ class RankingDataset(TrainValTestDataset):
         pass
 
     def collate(self, data):
-        q_ids, _, text_pairs, spans, labels = zip(*data)
+        q_ids, doc_ids, text_pairs, spans, labels = zip(*data)
         (encodings, spans), labels = self.preprocessor.collate(zip(text_pairs, spans, labels))
-        q_ids = torch.tensor(q_ids, dtype=torch.long)
 
-        return q_ids, (encodings, spans), labels
+        q_ids = torch.tensor(q_ids, dtype=torch.long)
+        doc_ids = torch.tensor(doc_ids, dtype=torch.long)
+
+        return q_ids, doc_ids, (encodings, spans), labels

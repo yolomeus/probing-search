@@ -1,7 +1,9 @@
 """Training loop related utilities.
 """
+import csv
 from logging import getLogger
-from typing import List
+from pathlib import Path
+from typing import List, Dict
 
 from hydra.utils import instantiate
 from omegaconf import DictConfig
@@ -87,3 +89,22 @@ def get_logger(obj):
     """Get a python logging logger for an object containing its module and class name when logging.
     """
     return getLogger('.'.join([obj.__module__, obj.__class__.__name__]))
+
+
+def write_trec_eval_file(out_file: Path, predictions: Dict[str, Dict[str, float]], name: str):
+    """Write the results in a file accepted by the TREC evaluation tool.
+
+    :param out_file: File to create
+    :param predictions: Query IDs mapped to document IDs mapped to scores
+    :param name: Method name
+    """
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_file, "w", encoding="utf-8", newline="") as fp:
+        writer = csv.writer(fp, delimiter="\t")
+        for q_id in predictions:
+            ranking = sorted(
+                predictions[q_id].keys(), key=predictions[q_id].get, reverse=True
+            )
+            for rank, doc_id in enumerate(ranking, 1):
+                score = predictions[q_id][doc_id]
+                writer.writerow([q_id, "Q0", doc_id, rank, score, name])
