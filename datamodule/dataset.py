@@ -51,7 +51,6 @@ class JSONLDataset(TrainValTestDataset):
         """
 
         :param task: name of the task the dataset will be used for.
-        :param label2id: a mapping from string labels to integer ids.
         :param preprocessor: preprocessor to be applied to each instance.
         """
 
@@ -69,7 +68,7 @@ class JSONLDataset(TrainValTestDataset):
         self.train_file = train_file
         self.val_file = val_file
         self.test_file = test_file
-        self._label2id = self.read_labels(label_file)
+        self._label2id = label_file if label_file is None else self.read_labels(label_file)
 
         self.preprocessor = preprocessor
 
