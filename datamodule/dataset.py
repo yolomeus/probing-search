@@ -216,6 +216,9 @@ class RankingDataset(TrainValTestDataset):
         input_text = query + ' [SEP] ' + doc
         subject_in, new_spans, new_labels = self.preprocessor(input_text, labels=label)
 
+        q_id = self.get_original_query_id(q_id)
+        doc_id = self.get_original_document_id(doc_id)
+        
         return q_id, doc_id, subject_in, new_spans, new_labels
 
     def __len__(self):
@@ -250,3 +253,11 @@ class RankingDataset(TrainValTestDataset):
         doc_ids = torch.tensor(doc_ids, dtype=torch.long)
 
         return q_ids, doc_ids, (encodings, spans), labels
+
+    def get_original_query_id(self, q_id: int):
+        with h5py.File(self._data_file, "r") as fp:
+            return int(fp["orig_q_ids"].asstr()[q_id])
+
+    def get_original_document_id(self, doc_id: int):
+        with h5py.File(self._data_file, "r") as fp:
+            return int(fp["orig_doc_ids"].asstr()[doc_id])
