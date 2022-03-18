@@ -102,7 +102,7 @@ class RankingLoop(DefaultClassificationLoop):
             for q_id, doc_id, pred in zip(output['q_ids'], output['doc_ids'], output['y_pred']):
                 results_dict[q_id.item()][doc_id.item()] = pred[-1].item()
 
-            write_trec_eval_file(Path('./trec_predictions.csv'), results_dict, self.model.subject_model.model_name)
+        write_trec_eval_file(Path('./trec_predictions.csv'), results_dict, self.model.subject_model.model_name)
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         q_ids, x, y_true = batch
