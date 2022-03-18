@@ -6,8 +6,8 @@ from abc import abstractmethod, ABC
 from os import path, getcwd
 
 import torch
-from hydra.utils import instantiate
-from omegaconf import DictConfig
+from hydra.utils import instantiate, to_absolute_path
+from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
@@ -220,7 +220,7 @@ class MDLProbeTraining(Procedure):
     """
 
     def __init__(self, cfg: DictConfig, limit_mdl_val_steps: int, limit_full_run_val_steps: int):
-        self.default_training = DefaultTraining(limit_full_run_val_steps, cfg)
+        self.default_training = DefaultTraining(cfg, limit_full_run_val_steps)
         self.online_coding = MDLOnlineCoding(self.default_training.datamodule,
                                              self.default_training.logger.experiment,
                                              limit_mdl_val_steps,
@@ -230,3 +230,26 @@ class MDLProbeTraining(Procedure):
         self.online_coding.run()
         del self.online_coding
         self.default_training.run()
+
+
+class TestOnly(BaseTraining):
+    def __init__(self, cfg, cfg_path, ckpt_path):
+        self.loaded_cfg = OmegaConf.load(to_absolute_path(cfg_path))
+        super().__init__(self.loaded_cfg)
+
+        self.ckpt_path = to_absolute_path(ckpt_path)
+        self.calling_cfg = cfg
+
+        self.datamodule = instantiate(self.calling_cfg.datamodule,
+                                      train_conf=self.cfg.training,
+                                      test_conf=self.cfg.testing,
+                                      num_workers=self.cfg.num_workers,
+                                      pin_memory=self.cfg.gpus > 0)
+        
+        self.loop = self.build_loop()
+
+        self.logger = self.build_logger(self.loop)
+        self.trainer = self.build_trainer(self.logger, self.build_callbacks())
+
+    def run(self):
+        self.trainer.test(self.loop, ckpt_path=self.ckpt_path, datamodule=self.datamodule)
