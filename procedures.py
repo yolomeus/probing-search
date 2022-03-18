@@ -253,7 +253,7 @@ class TestOnly(BaseTraining):
         self.datamodule = self.build_datamodule()
         self.loop = self.build_loop()
 
-        self.logger = self.build_logger(self.loop, project='debug')
+        self.logger = self.build_logger(self.loop)
         self.trainer = self.build_trainer(self.logger, self.build_callbacks())
 
     def run(self):
