@@ -6,7 +6,6 @@ from itertools import chain
 from random import Random
 
 import h5py
-import numpy as np
 import torch
 from hydra.utils import to_absolute_path
 from torch.utils.data import Dataset, Subset
@@ -207,7 +206,7 @@ class RankingDataset(TrainValTestDataset):
         with h5py.File(self.current_file, "r") as fp:
             q_id = fp["q_ids"][index]
             doc_id = fp["doc_ids"][index]
-            label = np.expand_dims(fp["labels"][index], 0).astype('int64')
+            label = torch.tensor(fp["labels"][index]).unsqueeze(0).long()
 
         with h5py.File(self._data_file, "r") as fp:
             query = fp["queries"].asstr()[q_id]
@@ -218,7 +217,7 @@ class RankingDataset(TrainValTestDataset):
 
         q_id = self.get_original_query_id(q_id)
         doc_id = self.get_original_document_id(doc_id)
-        
+
         return q_id, doc_id, subject_in, new_spans, new_labels
 
     def __len__(self):
