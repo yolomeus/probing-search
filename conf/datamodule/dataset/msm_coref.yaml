@@ -1,0 +1,18 @@
+defaults:
+  - task: double_span_class
+  - preprocessor: bert_retokenization
+
+_target_: datamodule.dataset.JSONLDataset
+name: msm_coref
+
+raw_file: data/msm/coref/msmarco_coref_res_59781_30_2022_03_18-21-04-50.json
+
+train_file: data/msm/coref/train.jsonl
+val_file: data/msm/coref/validation.jsonl
+test_file: data/msm/coref/test.jsonl
+label_file: data/msm/coref/labels.txt
+
+num_train_samples: 39781
+num_test_samples: 20000
+
+num_classes: 2
