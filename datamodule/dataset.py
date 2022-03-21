@@ -67,10 +67,11 @@ class JSONLDataset(TrainValTestDataset):
         self.train_file = train_file
         self.val_file = val_file
         self.test_file = test_file
-        self._label2id = label_file if label_file is None else self.read_labels(label_file)
+        self.label_file = label_file
 
         self.preprocessor = preprocessor
 
+        self._label2id = None
         self._labels_to_onehot = labels_to_onehot
 
         self.instances = None
@@ -112,13 +113,13 @@ class JSONLDataset(TrainValTestDataset):
 
         # filter out instances with no target spans
         instances = tuple(filter(lambda x: len(x['targets']) > 0, instances))
-
-        if self._label2id is not None:
+        if self.label_file is not None:
+            self._label2id = self.read_labels(self.label_file)
             # replace label strings with integer ids or one-hot encoding for training
             one_hot_lookup = torch.eye(len(self._label2id))
             for instance in instances:
                 for target in instance['targets']:
-                    label_str = target['label']
+                    label_str = str(target['label'])
                     label_id = self._label2id[label_str]
                     if self._labels_to_onehot:
                         target['label'] = one_hot_lookup[label_id]
@@ -175,7 +176,7 @@ class JSONLDataset(TrainValTestDataset):
                     labels = None
                 else:
                     ds_splits, min_score_train, max_score_train = (train_ds, val_ds, test_ds), None, None
-                    labels = set(chain.from_iterable([[t['label'] for t in x['targets']] for x in ds]))
+                    labels = set(chain.from_iterable([[str(t['label']) for t in x['targets']] for x in ds]))
 
                 # export splits as jsonl files
                 output_dir = to_absolute_path(os.path.split(to_be_generated[0])[0])
