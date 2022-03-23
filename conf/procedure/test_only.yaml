@@ -1,3 +1,2 @@
 _target_: procedures.TestOnly
-model_cfg_path: null
 ckpt_path: null

@@ -4,6 +4,7 @@ import logging
 import os.path
 from abc import abstractmethod, ABC
 from os import path, getcwd
+from pathlib import Path
 
 import torch
 from hydra.utils import instantiate, to_absolute_path
@@ -236,19 +237,19 @@ class TestOnly(BaseTraining):
     """Load a model from an old config and a checkpoint file, then test it on the current datamodule.
     """
 
-    def __init__(self, cfg, model_cfg_path, ckpt_path):
+    def __init__(self, cfg, ckpt_path):
         """
 
         :param cfg: the config used when calling this procedure
-        :param model_cfg_path: the config that was used to instantiate the model to be tested.
         :param ckpt_path: path to the model checkpoint to test.
         """
         super().__init__(cfg)
 
-        self.loaded_cfg = OmegaConf.load(to_absolute_path(model_cfg_path))
-        self.calling_cfg = cfg
-
         self.ckpt_path = to_absolute_path(ckpt_path)
+        self.cfg_file_path = path.join(Path(self.ckpt_path).parent.parent, '.hydra/config.yaml')
+
+        self.loaded_cfg = OmegaConf.load(self.cfg_file_path)
+        self.calling_cfg = cfg
 
         self.datamodule = self.build_datamodule()
         self.loop = self.build_loop()
