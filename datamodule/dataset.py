@@ -1,6 +1,8 @@
+import csv
 import json
 import os
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from copy import deepcopy
 from itertools import chain
 from random import Random
@@ -187,8 +189,18 @@ class JSONLDataset(TrainValTestDataset):
 
 
 class RankingDataset(TrainValTestDataset):
-    def __init__(self, name, task, data_file, train_file, val_file, test_file, preprocessor: Preprocessor, num_classes,
+    def __init__(self,
+                 name,
+                 task,
+                 data_file,
+                 train_file,
+                 val_file,
+                 test_file,
+                 qrels_file,
+                 preprocessor: Preprocessor,
+                 num_classes,
                  limit_train_samples=None):
+
         self.name = name
         self.task = task
         self.num_classes = num_classes
@@ -200,6 +212,9 @@ class RankingDataset(TrainValTestDataset):
         self._val_file = to_absolute_path(val_file)
         self._test_file = to_absolute_path(test_file)
 
+        self._qrels_file = to_absolute_path(qrels_file)
+
+        self.qid_to_pid_to_label = self._read_trec_qrels(self._qrels_file)
         self.current_file = None
         self.preprocessor = preprocessor
 
@@ -207,7 +222,12 @@ class RankingDataset(TrainValTestDataset):
         with h5py.File(self.current_file, "r") as fp:
             q_id = fp["q_ids"][index]
             doc_id = fp["doc_ids"][index]
-            label = torch.tensor(fp["labels"][index]).unsqueeze(0).long()
+
+            og_q_id = self.get_original_query_id(q_id)
+            og_doc_id = self.get_original_document_id(doc_id)
+
+            label = self.qid_to_pid_to_label[int(og_q_id)].get(int(og_doc_id), 0)
+            label = torch.as_tensor([label])
 
         with h5py.File(self._data_file, "r") as fp:
             query = fp["queries"].asstr()[q_id]
@@ -216,10 +236,7 @@ class RankingDataset(TrainValTestDataset):
         input_text = query + ' [SEP] ' + doc
         subject_in, new_spans, new_labels = self.preprocessor(input_text, labels=label)
 
-        q_id = self.get_original_query_id(q_id)
-        doc_id = self.get_original_document_id(doc_id)
-
-        return q_id, doc_id, subject_in, new_spans, new_labels
+        return og_q_id, og_doc_id, subject_in, new_spans, new_labels
 
     def __len__(self):
         with h5py.File(self.current_file, "r") as fp:
@@ -252,7 +269,9 @@ class RankingDataset(TrainValTestDataset):
         q_ids = torch.tensor(q_ids, dtype=torch.long)
         doc_ids = torch.tensor(doc_ids, dtype=torch.long)
 
-        return q_ids, doc_ids, (encodings, spans), labels
+        rank_labels = labels
+        binary_labels = torch.where(labels > 0, 1, 0)
+        return q_ids, doc_ids, (encodings, spans), binary_labels, rank_labels
 
     def get_original_query_id(self, q_id: int):
         with h5py.File(self._data_file, "r") as fp:
@@ -261,3 +280,13 @@ class RankingDataset(TrainValTestDataset):
     def get_original_document_id(self, doc_id: int):
         with h5py.File(self._data_file, "r") as fp:
             return int(fp["orig_doc_ids"].asstr()[doc_id])
+
+    @staticmethod
+    def _read_trec_qrels(qrels_file):
+        qrels = defaultdict(dict)
+        with open(qrels_file, 'r') as fp:
+            for q_id, _, p_id, label in csv.reader(fp, delimiter=' '):
+                q_id, p_id, label = map(int, [q_id, p_id, label])
+                qrels[q_id][p_id] = int(label)
+
+        return qrels

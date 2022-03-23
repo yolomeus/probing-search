@@ -3,18 +3,15 @@ encapsulate the model instead of being bound to it by inheritance. This way, the
 multiple different procedures, without having to duplicate model code by subclassing.
 """
 from abc import ABC
-from collections import defaultdict
-from pathlib import Path
 
 from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
-from pytorch_lightning.utilities.types import EPOCH_OUTPUT
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from datamodule import DatasetSplit
-from logger.utils import Metrics, write_trec_eval_file
+from logger.utils import Metrics
 
 
 class AbstractBaseLoop(LightningModule, ABC):
@@ -84,25 +81,16 @@ class RankingLoop(DefaultClassificationLoop):
         return {'loss': loss}
 
     def validation_step(self, batch, batch_idx):
-        q_ids, _, x, y_true = batch
+        q_ids, _, x, y_true, y_rank = batch
         y_pred = self.model(x)
-        self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.VALIDATION, indexes=q_ids)
+        self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.VALIDATION, indexes=q_ids, y_rank=y_rank)
 
     def test_step(self, batch, batch_idx):
-        q_ids, doc_ids, x, y_true = batch
+        q_ids, doc_ids, x, y_true, y_rank = batch
         y_pred = self.model(x)
-        self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.TEST, indexes=q_ids)
+        self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.TEST, indexes=q_ids, y_rank=y_rank)
 
         return {'q_ids': q_ids, 'doc_ids': doc_ids, 'y_pred': y_pred}
-
-    def test_epoch_end(self, outputs: EPOCH_OUTPUT) -> None:
-        # q_id to doc_id to score
-        results_dict = defaultdict(dict)
-        for output in outputs:
-            for q_id, doc_id, pred in zip(output['q_ids'], output['doc_ids'], output['y_pred']):
-                results_dict[q_id.item()][doc_id.item()] = pred[-1].item()
-
-        write_trec_eval_file(Path('./trec_predictions.csv'), results_dict, self.model.subject_model.model_name)
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         q_ids, x, y_true = batch
