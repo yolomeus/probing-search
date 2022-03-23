@@ -11,6 +11,7 @@ from torch.nn import Module, ModuleList, Softmax, Sigmoid, Identity
 from torchmetrics.retrieval import RetrievalMetric
 
 from datamodule import DatasetSplit
+from metrics import TrecNDCG
 
 
 class Metrics(Module):
@@ -52,9 +53,11 @@ class Metrics(Module):
             metrics = self.val_metrics
 
         for metric in metrics:
-            # pass kwargs if accepted by metric
-            if issubclass(type(metric), RetrievalMetric):
-                metric(y_prob, y_true, **kwargs)
+            if issubclass(type(metric), TrecNDCG):
+                # for ndcg we use integer scores instead of binary labels
+                metric(y_prob, kwargs['y_rank'], indexes=kwargs['indexes'])
+            elif issubclass(type(metric), RetrievalMetric):
+                metric(y_prob, y_true, indexes=kwargs['indexes'])
             else:
                 metric(y_prob, y_true)
 

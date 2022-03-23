@@ -1,10 +1,13 @@
-from abc import ABC
+import csv
+from abc import ABC, abstractmethod
+from collections import defaultdict
 from typing import Any
 
 import torch
+from hydra.utils import to_absolute_path
 from torch import Tensor, tensor
 from torch.nn import functional as F
-from torchmetrics import Metric, RetrievalPrecision, RetrievalMAP, RetrievalMRR, RetrievalNormalizedDCG
+from torchmetrics import Metric, RetrievalPrecision, RetrievalMRR
 from torchmetrics.retrieval import RetrievalMetric
 from torchmetrics.utilities.checks import _check_retrieval_inputs
 from torchmetrics.utilities.data import get_group_indexes
@@ -127,10 +130,6 @@ class CustomRetrievalMixin(RetrievalMetric, ABC):
         return torch.stack([x.to(preds) for x in res]).mean() if res else tensor(0.0).to(preds)
 
 
-class MAP(CustomRetrievalMixin, RetrievalMAP):
-    """Mean Average Precision"""
-
-
 class MRR(CustomRetrievalMixin, RetrievalMRR):
     """Mean Reciprocal Rank"""
 
@@ -145,11 +144,126 @@ class PrecisionAt20(CustomRetrievalMixin, RetrievalPrecision):
         super().__init__(k=20, **kwargs)
 
 
-class NDCGAt10(CustomRetrievalMixin, RetrievalNormalizedDCG):
-    def __init__(self, **kwargs):
-        super().__init__(k=10, **kwargs)
+class TrecMetric(CustomRetrievalMixin):
+    """Retrieval metric with access to a qrels mapping from q_id to doc_id to label. Further the `_metric` method
+    gets access to the q_id corresponding to the current results list that is evaluated. This allows accounting for
+    relevant targets, that are not part of the results list, but listed in qrels.
+    """
+
+    def __init__(self, qrels_file, *args, **kwargs):
+        """
+
+        :param qrels_file: the tsv file to read qrels from in the TREC qrels format.
+        """
+        super().__init__(*args, **kwargs)
+
+        self.qrels = defaultdict(dict)
+
+        with open(to_absolute_path(qrels_file), 'r') as fp:
+            for q_id, _, p_id, label in csv.reader(fp, delimiter=' '):
+                q_id, p_id, label = map(int, [q_id, p_id, label])
+                self.qrels[q_id][p_id] = int(label)
+
+    def compute(self) -> Tensor:
+        indexes = self.indexes
+        preds = self.preds
+        target = self.target
+
+        res = []
+        q_id_to_positions = defaultdict(list)
+        for i, q_id in enumerate(indexes):
+            q_id_to_positions[q_id.item()].append(i)
+
+        for q_id, positions in q_id_to_positions.items():
+            mini_preds = preds[positions]
+            mini_target = target[positions]
+
+            res.append(self._metric(mini_preds, mini_target, q_id))
+
+        return torch.stack([x.to(preds) for x in res]).mean() if res else tensor(0.0).to(preds)
+
+    @abstractmethod
+    def _metric(self, preds: Tensor, target: Tensor, q_id: int = None) -> Tensor:
+        """
+        :param preds: the predictions for each element to be ranked.
+        :param target: integer target scores implying actual relevance for each prediction.
+        :param q_id: the q_id corresponding to the current target and prediction lists.
+        """
 
 
-class NDCGAt20(CustomRetrievalMixin, RetrievalNormalizedDCG):
-    def __init__(self, **kwargs):
-        super().__init__(k=20, **kwargs)
+class TrecMAP(TrecMetric):
+    """Mean Average Precision that takes into account all relevant documents when averaging, not only the ones in the
+    results list."""
+
+    def __init__(self, qrels_file, *args, **kwargs):
+        super().__init__(qrels_file, *args, **kwargs)
+
+        self.q_id_to_num_rels = defaultdict(int)
+        for q_id in self.qrels:
+            labels = list(self.qrels[q_id].values())
+            for label in labels:
+                if label > 0:
+                    self.q_id_to_num_rels[int(q_id)] += 1
+
+    def _metric(self, preds: Tensor, target: Tensor, q_id: int = None) -> Tensor:
+        ordering = torch.argsort(preds, descending=True)
+        targets_sorted = target[ordering]
+
+        rel_so_far = 0
+        total = 0
+        for i in range(len(ordering)):
+            if targets_sorted[i] > 0:
+                rel_so_far += 1
+                total += rel_so_far / (i + 1)
+
+        return torch.tensor(total / self.q_id_to_num_rels[q_id])
+
+
+class TrecNDCG(TrecMetric):
+    """NDCG that takes into account all relevant documents when computing the ideal DCG, not only the ones in the
+    results list.
+    """
+
+    def __init__(self, qrels_file, k, *args, **kwargs):
+        super().__init__(qrels_file, *args, **kwargs)
+        self.allow_non_binary_target = True
+        self.k = k
+
+    def _metric(self, preds: Tensor, target: Tensor, q_id=None) -> Tensor:
+        ordering = torch.argsort(preds, descending=True)
+        ranked_targets = target[ordering].cpu().numpy()
+
+        return self._ndcg(ranked_targets, q_id)
+
+    def _ndcg(self, ranked_targets, q_id):
+        return self._dcg(ranked_targets) / self._dcg(self._ideal_targets(q_id))
+
+    def _ideal_targets(self, q_id):
+        ideal_targets = list(self.qrels[q_id].values())
+        return torch.as_tensor(sorted(ideal_targets, reverse=True))
+
+    def _dcg(self, targets):
+        gain = targets[:self.k]
+        discount = self._discount(min(self.k, len(gain)))
+        return (gain / discount).sum()
+
+    @staticmethod
+    def _discount(n):
+        x = torch.arange(1, n + 1, 1)
+        return torch.log2(x + 1)
+
+
+class TrecNDCGAt10(TrecNDCG):
+    """TREC NDCG with cutoff 10.
+    """
+
+    def __init__(self, qrels_file, *args, **kwargs):
+        super().__init__(qrels_file, k=10, *args, **kwargs)
+
+
+class TrecNDCGAt20(TrecNDCG):
+    """TREC NDCG with cutoff 20.
+    """
+
+    def __init__(self, qrels_file, *args, **kwargs):
+        super().__init__(qrels_file, k=20, *args, **kwargs)
