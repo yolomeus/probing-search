@@ -250,6 +250,7 @@ class TestOnly(BaseTraining):
 
         self.loaded_cfg = OmegaConf.load(self.cfg_file_path)
         self.calling_cfg = cfg
+        self.calling_cfg['model'] = self.loaded_cfg['model']
 
         self.datamodule = self.build_datamodule()
         self.loop = self.build_loop()
