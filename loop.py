@@ -73,7 +73,7 @@ class DefaultClassificationLoop(AbstractBaseLoop):
 class RankingLoop(DefaultClassificationLoop):
 
     def training_step(self, batch, batch_idx):
-        _, _, x, y_true = batch
+        _, _, x, y_true, _ = batch
         y_pred = self.model(x)
         loss = self.loss(y_pred, y_true)
 
@@ -93,6 +93,6 @@ class RankingLoop(DefaultClassificationLoop):
         return {'q_ids': q_ids, 'doc_ids': doc_ids, 'y_pred': y_pred}
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
-        q_ids, x, y_true = batch
+        q_ids, _, x, y_true, _ = batch
         y_pred = self.model(x)
         return y_pred, y_true
