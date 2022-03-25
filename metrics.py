@@ -206,6 +206,9 @@ class TrecMAP(TrecMetric):
                     self.q_id_to_num_rels[int(q_id)] += 1
 
     def _metric(self, preds: Tensor, target: Tensor, q_id: int = None) -> Tensor:
+        if self.q_id_to_num_rels[q_id] == 0:
+            return torch.zeros((1,))
+
         ordering = torch.argsort(preds, descending=True)
         targets_sorted = target[ordering]
 
