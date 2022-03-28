@@ -81,14 +81,7 @@ class DefaultClassificationLoop(AbstractBaseLoop):
 
         metrics = self._select_metrics(split)
         for name, metric in metrics.items():
-            if issubclass(type(metric), TrecNDCG):
-                # for ndcg we use integer scores instead of binary labels
-                metric(y_prob, kwargs['y_rank'], indexes=kwargs['indexes'])
-            elif issubclass(type(metric), RetrievalMetric):
-                metric(y_prob, y_true, indexes=kwargs['indexes'])
-            else:
-                metric(y_prob, y_true)
-
+            self.call_metric(y_prob, y_true, metric, **kwargs)
             self.log(f'{split.value}/{name}',
                      metric,
                      on_step=False,
@@ -114,6 +107,10 @@ class DefaultClassificationLoop(AbstractBaseLoop):
             return Identity()
         else:
             raise NotImplementedError
+
+    def call_metric(self, y_prob, y_true, metric, **kwargs):
+        """overwrite if metrics require special arguments etc."""
+        metric(y_prob, y_true)
 
 
 class RankingLoop(DefaultClassificationLoop):
@@ -142,3 +139,12 @@ class RankingLoop(DefaultClassificationLoop):
         q_ids, _, x, y_true, _ = batch
         y_pred = self.model(x)
         return y_pred, y_true
+
+    def call_metric(self, y_prob, y_true, metric, **kwargs):
+        if issubclass(type(metric), TrecNDCG):
+            # for ndcg we use integer scores instead of binary labels
+            metric(y_prob, kwargs['y_rank'], indexes=kwargs['indexes'])
+        elif issubclass(type(metric), RetrievalMetric):
+            metric(y_prob, y_true, indexes=kwargs['indexes'])
+        else:
+            metric(y_prob, y_true)
