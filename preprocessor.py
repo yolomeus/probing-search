@@ -111,8 +111,9 @@ class BERTPreprocessor(EdgeProbingPreprocessor):
         return batch_encoding
 
     def _bucketize_labels(self, labels):
+        assert len(labels) == 1, 'we expect a single label when dealing with score targets'
         boundaries = torch.linspace(0, 1, self.num_buckets)[1:]
-        return torch.bucketize(labels, boundaries)
+        return torch.bucketize(labels[0], boundaries).unsqueeze(0)
 
 
 class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
