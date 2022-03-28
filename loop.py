@@ -57,7 +57,7 @@ class DefaultClassificationLoop(AbstractBaseLoop):
     def training_step(self, batch, batch_idx):
         x, y_true = batch
         y_pred = self.model(x)
-        loss = self.metrics.log_metrics(y_pred, y_true, DatasetSplit.TRAIN)
+        loss = self.log_metrics(y_pred, y_true, DatasetSplit.TRAIN)
 
         return {'loss': loss}
 
@@ -88,7 +88,11 @@ class DefaultClassificationLoop(AbstractBaseLoop):
                      on_epoch=True,
                      batch_size=len(y_true))
 
-        self.log(f'{split.value}/loss', self.loss(y_pred, y_true), on_step=False, on_epoch=True, batch_size=len(y_true))
+        loss = self.loss(y_pred, y_true)
+        self.log(f'{split.value}/loss', loss, on_step=False, on_epoch=True, batch_size=len(y_true))
+
+        if split == DatasetSplit.TRAIN:
+            return loss
 
     def _select_metrics(self, split):
         if split == DatasetSplit.TRAIN:
