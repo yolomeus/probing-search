@@ -1,0 +1,20 @@
+defaults:
+  - /datamodule/dataset/metrics@train_metrics:
+      - accuracy
+      - f1score
+  - /datamodule/dataset/metrics@val_metrics:
+      - accuracy
+      - f1score
+      - precision@10
+      - precision@20
+      - mrr
+      - map
+  - /datamodule/dataset/metrics@test_metrics:
+      - accuracy
+      - f1score
+      - precision@10
+      - precision@20
+      - mrr
+      - trec_map
+      - trec_ndcg@10
+      - trec_ndcg@20

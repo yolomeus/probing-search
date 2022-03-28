@@ -1,6 +1,7 @@
 defaults:
   - task: single_span_class
   - preprocessor: bert_retokenization
+  - metrics/default_set@_here_
 
 _target_: datamodule.dataset.JSONLDataset
 name: msm_ner

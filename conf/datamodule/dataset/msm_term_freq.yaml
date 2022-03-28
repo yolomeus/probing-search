@@ -1,5 +1,7 @@
 defaults:
   - task: double_span_score
+  - preprocessor: bert
+  - metrics/default_set@_here_
 
 name: msm_term_freq
 

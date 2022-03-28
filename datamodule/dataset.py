@@ -19,6 +19,11 @@ from preprocessor import Preprocessor
 
 
 class TrainValTestDataset(Dataset, ABC):
+    def __init__(self, train_metrics, val_metrics, test_metrics):
+        self.train_metrics = [str(m) for m in train_metrics]
+        self.val_metrics = [str(m) for m in val_metrics]
+        self.test_metrics = [str(m) for m in test_metrics]
+
     @abstractmethod
     def get_split(self, split: DatasetSplit) -> Dataset:
         """
@@ -36,25 +41,16 @@ class JSONLDataset(TrainValTestDataset):
     """A dataset that reads dict instances from a jsonl file into memory, and applies preprocessing to each instance.
     """
 
-    def __init__(self,
-                 name,
-                 task,
-                 train_file,
-                 val_file,
-                 test_file,
-                 preprocessor: Preprocessor,
-                 num_train_samples,
-                 num_test_samples,
-                 num_classes,
-                 labels_to_onehot: bool = False,
-                 raw_file=None,
-                 label_file=None):
+    def __init__(self, name, task, train_file, val_file, test_file, preprocessor: Preprocessor, num_train_samples,
+                 num_test_samples, num_classes, train_metrics, val_metrics, test_metrics,
+                 labels_to_onehot: bool = False, raw_file=None, label_file=None):
         """
 
         :param task: name of the task the dataset will be used for.
         :param preprocessor: preprocessor to be applied to each instance.
         """
 
+        super().__init__(train_metrics, val_metrics, test_metrics)
         self.log = get_logger(self)
 
         self.name = name
@@ -189,17 +185,10 @@ class JSONLDataset(TrainValTestDataset):
 
 
 class RankingDataset(TrainValTestDataset):
-    def __init__(self,
-                 name,
-                 task,
-                 data_file,
-                 train_file,
-                 val_file,
-                 test_file,
-                 qrels_file,
-                 preprocessor: Preprocessor,
-                 num_classes,
-                 limit_train_samples=None):
+    def __init__(self, name, task, data_file, train_file, val_file, test_file, qrels_file, preprocessor: Preprocessor,
+                 num_classes, train_metrics, val_metrics, test_metrics, limit_train_samples=None):
+
+        super().__init__(train_metrics, val_metrics, test_metrics)
 
         self.name = name
         self.task = task

@@ -1,0 +1,4 @@
+f1score:
+  _target_: torchmetrics.classification.f_beta.F1Score
+  average: 'macro'
+  num_classes: ${datamodule.dataset.num_classes}

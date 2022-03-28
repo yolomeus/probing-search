@@ -6,12 +6,13 @@ from abc import ABC
 
 from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
-from torch.nn import Module
+from torch.nn import Module, ModuleDict, Sigmoid, Softmax, Identity
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torchmetrics.retrieval import RetrievalMetric
 
 from datamodule import DatasetSplit
-from logger.utils import Metrics
+from metrics import TrecNDCG
 
 
 class AbstractBaseLoop(LightningModule, ABC):
@@ -28,7 +29,8 @@ class DefaultClassificationLoop(AbstractBaseLoop):
     task with instance-label pairs (x, y) and a loss function that has the signature loss(y_pred, y_true).
     """
 
-    def __init__(self, hparams: DictConfig, model: Module, optimizer: Optimizer, loss: Module):
+    def __init__(self, hparams: DictConfig, model: Module, optimizer: Optimizer, loss: Module, train_metrics,
+                 val_metrics, test_metrics, to_probabilities):
         """
         :param hparams: contains all hyperparameters.
         """
@@ -37,7 +39,12 @@ class DefaultClassificationLoop(AbstractBaseLoop):
         self.model = model
         self.loss = loss
         self.optimizer = optimizer
-        self.metrics = Metrics(self.loss, hparams.metrics.metrics_list, hparams.metrics.to_probabilities)
+
+        self.train_metrics = ModuleDict(train_metrics)
+        self.val_metrics = ModuleDict(val_metrics)
+        self.test_metrics = ModuleDict(test_metrics)
+
+        self.to_probabilities = self._probs_module(to_probabilities)
 
     def configure_optimizers(self):
         train_conf = self.hparams.training
@@ -50,24 +57,63 @@ class DefaultClassificationLoop(AbstractBaseLoop):
     def training_step(self, batch, batch_idx):
         x, y_true = batch
         y_pred = self.model(x)
-        loss = self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.TRAIN)
+        loss = self.metrics.log_metrics(y_pred, y_true, DatasetSplit.TRAIN)
 
         return {'loss': loss}
 
     def validation_step(self, batch, batch_idx):
         x, y_true = batch
         y_pred = self.model(x)
-        self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.VALIDATION)
+        self.log_metrics(y_pred, y_true, DatasetSplit.VALIDATION)
 
     def test_step(self, batch, batch_idx):
         x, y_true = batch
         y_pred = self.model(x)
-        self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.TEST)
+        self.log_metrics(y_pred, y_true, DatasetSplit.TEST)
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         x, y_true = batch
         y_pred = self.model(x)
         return y_pred, y_true
+
+    def log_metrics(self, y_pred, y_true, split: DatasetSplit, **kwargs):
+        y_prob = self.to_probabilities(y_pred)
+
+        metrics = self._select_metrics(split)
+        for name, metric in metrics.items():
+            if issubclass(type(metric), TrecNDCG):
+                # for ndcg we use integer scores instead of binary labels
+                metric(y_prob, kwargs['y_rank'], indexes=kwargs['indexes'])
+            elif issubclass(type(metric), RetrievalMetric):
+                metric(y_prob, y_true, indexes=kwargs['indexes'])
+            else:
+                metric(y_prob, y_true)
+
+            self.log(f'{split.value}/{name}',
+                     metric,
+                     on_step=False,
+                     on_epoch=True,
+                     batch_size=len(y_true))
+
+        self.log(f'{split.value}/loss', self.loss(y_pred, y_true), on_step=False, on_epoch=True, batch_size=len(y_true))
+
+    def _select_metrics(self, split):
+        if split == DatasetSplit.TRAIN:
+            return self.train_metrics
+        elif split == DatasetSplit.TEST:
+            return self.test_metrics
+
+        return self.val_metrics
+
+    def _probs_module(self, name: str):
+        if name.lower() == 'sigmoid':
+            return Sigmoid()
+        elif name.lower() == 'softmax':
+            return Softmax(dim=-1)
+        elif name.lower() in [None, 'identity']:
+            return Identity()
+        else:
+            raise NotImplementedError
 
 
 class RankingLoop(DefaultClassificationLoop):
@@ -83,12 +129,12 @@ class RankingLoop(DefaultClassificationLoop):
     def validation_step(self, batch, batch_idx):
         q_ids, _, x, y_true, y_rank = batch
         y_pred = self.model(x)
-        self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.VALIDATION, indexes=q_ids, y_rank=y_rank)
+        self.log_metrics(y_pred, y_true, DatasetSplit.VALIDATION, indexes=q_ids, y_rank=y_rank)
 
     def test_step(self, batch, batch_idx):
         q_ids, doc_ids, x, y_true, y_rank = batch
         y_pred = self.model(x)
-        self.metrics.metric_log(self, y_pred, y_true, DatasetSplit.TEST, indexes=q_ids, y_rank=y_rank)
+        self.log_metrics(y_pred, y_true, DatasetSplit.TEST, indexes=q_ids, y_rank=y_rank)
 
         return {'q_ids': q_ids, 'doc_ids': doc_ids, 'y_pred': y_pred}
 

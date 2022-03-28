@@ -1,0 +1,4 @@
+trec_ndcg@10:
+  _target_: metrics.TrecNDCG
+  qrels_file: ${datamodule.dataset.qrels_file}
+  k: 10

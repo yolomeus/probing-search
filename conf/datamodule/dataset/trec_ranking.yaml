@@ -1,6 +1,7 @@
 defaults:
   - task: double_span_class
   - preprocessor: bert
+  - metrics/ranking_set@_here_
 
 _target_: datamodule.dataset.RankingDataset
 

@@ -1,0 +1,2 @@
+map:
+  _target_: metrics.MAP

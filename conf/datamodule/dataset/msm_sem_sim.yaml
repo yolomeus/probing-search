@@ -1,6 +1,7 @@
 defaults:
   - task: double_span_score
   - preprocessor: bert
+  - metrics/default_set@_here_
 
 _target_: datamodule.dataset.JSONLDataset
 name: msm_sem_sim

@@ -1,0 +1,10 @@
+defaults:
+  - /datamodule/dataset/metrics@train_metrics:
+      - accuracy
+      - f1score
+  - /datamodule/dataset/metrics@val_metrics:
+      - accuracy
+      - f1score
+  - /datamodule/dataset/metrics@test_metrics:
+      - accuracy
+      - f1score

@@ -1,0 +1,3 @@
+trec_map:
+  _target_: metrics.TrecMAP
+  qrels_file: ${datamodule.dataset.qrels_file}

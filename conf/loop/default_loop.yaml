@@ -6,3 +6,9 @@ loss:
 optimizer:
   _target_: torch.optim.Adam
   lr: 1e-4
+
+train_metrics: ${datamodule.dataset.train_metrics}
+val_metrics: ${datamodule.dataset.val_metrics}
+test_metrics: ${datamodule.dataset.test_metrics}
+
+to_probabilities: ${testing.to_probabilities}
