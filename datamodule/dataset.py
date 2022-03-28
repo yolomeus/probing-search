@@ -218,6 +218,8 @@ class RankingDataset(TrainValTestDataset):
         self.current_file = None
         self.preprocessor = preprocessor
 
+        self.split = None
+
     def __getitem__(self, index):
         with h5py.File(self.current_file, "r") as fp:
             q_id = fp["q_ids"][index]
@@ -226,8 +228,12 @@ class RankingDataset(TrainValTestDataset):
             og_q_id = self.get_original_query_id(q_id)
             og_doc_id = self.get_original_document_id(doc_id)
 
-            label = self.qid_to_pid_to_label[int(og_q_id)].get(int(og_doc_id), 0)
-            label = torch.as_tensor([label])
+            if self.split == DatasetSplit.TEST:
+                # for the test set we use the qrels file
+                label = self.qid_to_pid_to_label[int(og_q_id)].get(int(og_doc_id), 0)
+                label = torch.as_tensor([label])
+            else:
+                label = torch.tensor(fp["labels"][index]).unsqueeze(0).long()
 
         with h5py.File(self._data_file, "r") as fp:
             query = fp["queries"].asstr()[q_id]
@@ -257,6 +263,7 @@ class RankingDataset(TrainValTestDataset):
         else:
             raise NotImplementedError()
 
+        self.split = split
         return deepcopy(self)
 
     def prepare_data(self):
