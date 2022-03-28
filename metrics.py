@@ -7,7 +7,7 @@ import torch
 from hydra.utils import to_absolute_path
 from torch import Tensor, tensor
 from torch.nn import functional as F
-from torchmetrics import Metric, RetrievalPrecision, RetrievalMRR
+from torchmetrics import Metric, RetrievalPrecision, RetrievalMRR, RetrievalMAP, RetrievalNormalizedDCG
 from torchmetrics.retrieval import RetrievalMetric
 from torchmetrics.utilities.checks import _check_retrieval_inputs
 from torchmetrics.utilities.data import get_group_indexes
@@ -130,18 +130,20 @@ class CustomRetrievalMixin(RetrievalMetric, ABC):
         return torch.stack([x.to(preds) for x in res]).mean() if res else tensor(0.0).to(preds)
 
 
+class MAP(CustomRetrievalMixin, RetrievalMAP):
+    """Mean Average Precision"""
+
+
 class MRR(CustomRetrievalMixin, RetrievalMRR):
     """Mean Reciprocal Rank"""
 
 
-class PrecisionAt10(CustomRetrievalMixin, RetrievalPrecision):
-    def __init__(self, **kwargs):
-        super().__init__(k=10, **kwargs)
+class Precision(CustomRetrievalMixin, RetrievalPrecision):
+    """Precision"""
 
 
-class PrecisionAt20(CustomRetrievalMixin, RetrievalPrecision):
-    def __init__(self, **kwargs):
-        super().__init__(k=20, **kwargs)
+class NDCG(CustomRetrievalMixin, RetrievalNormalizedDCG):
+    """Normalized DCG"""
 
 
 class TrecMetric(CustomRetrievalMixin):
@@ -254,19 +256,3 @@ class TrecNDCG(TrecMetric):
     def _discount(n):
         x = torch.arange(1, n + 1, 1)
         return torch.log2(x + 1)
-
-
-class TrecNDCGAt10(TrecNDCG):
-    """TREC NDCG with cutoff 10.
-    """
-
-    def __init__(self, qrels_file, *args, **kwargs):
-        super().__init__(qrels_file, k=10, *args, **kwargs)
-
-
-class TrecNDCGAt20(TrecNDCG):
-    """TREC NDCG with cutoff 20.
-    """
-
-    def __init__(self, qrels_file, *args, **kwargs):
-        super().__init__(qrels_file, k=20, *args, **kwargs)
