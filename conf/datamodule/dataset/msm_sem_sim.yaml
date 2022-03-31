@@ -6,7 +6,7 @@ defaults:
 _target_: datamodule.dataset.JSONLDataset
 name: msm_sem_sim
 
-raw_file: data/msm/sem_sim/msmarco_sem_sim_60000_10_2022_01_14-16-58-24.json
+raw_file: data/msm/sem_sim/msmarco_sem_sim_60000_10_2022_03_21-17-06-14.json
 
 train_file: data/msm/sem_sim/train.jsonl
 val_file: data/msm/sem_sim/validation.jsonl

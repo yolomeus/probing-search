@@ -35,7 +35,7 @@ def min_max_normalize(train_ds, val_ds, test_ds, bounds=None):
 
     :return: (train_ds, val_ds, test_ds), min_score_train, max_score_train
     """
-    scores_train = [x['target'] for x in train_ds]
+    scores_train = [target['label'] for x in train_ds for target in x['targets']]
     if bounds is None:
         min_score_train, max_score_train = min(scores_train), max(scores_train)
     else:
@@ -44,11 +44,10 @@ def min_max_normalize(train_ds, val_ds, test_ds, bounds=None):
     for split in [train_ds, val_ds, test_ds]:
         for x in split:
             # truncate and normalised based to training data stats
-            truncated_score = max(min_score_train, min(x['target'], max_score_train))
-            normalized_score = (truncated_score - min_score_train) / (max_score_train - min_score_train)
-
-            x['targets'] = [{'label': normalized_score}]
-            del x['target']
+            for t in x['targets']:
+                score_truncated = max(min_score_train, min(t['label'], max_score_train))
+                score_normalized = (score_truncated - min_score_train) / (max_score_train - min_score_train)
+                t['label'] = score_normalized
 
     return (train_ds, val_ds, test_ds), min_score_train, max_score_train
 
