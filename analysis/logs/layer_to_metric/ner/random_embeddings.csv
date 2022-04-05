@@ -1,0 +1,2 @@
+"Name","State","Runtime","Tags","End Time","model/subject_model/model_name","Created","model/pooler/layer_to_probe","val/accuracy/max","val/loss/min","test/accuracy","test/loss","mdl","compression"
+"warm-sun-658","finished","14493","layer:0, msm_ner","2022-01-26T18:28:46.000Z","random-embeddings","2022-01-26T14:27:13.000Z","0","0.7974284291267395","0.6433421969413757","0.8005212545394897","0.6399626135826111","204459.171875","4.250808238983154"
