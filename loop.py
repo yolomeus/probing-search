@@ -89,7 +89,7 @@ class DefaultClassificationLoop(AbstractBaseLoop):
                      batch_size=len(y_true))
 
         loss = self.loss(y_pred, y_true)
-        self.log(f'{split.value}/loss', loss, on_step=False, on_epoch=True, batch_size=len(y_true))
+        self.log(f'{split.value}/loss', loss.item(), on_step=False, on_epoch=True, batch_size=len(y_true))
 
         if split == DatasetSplit.TRAIN:
             return loss
