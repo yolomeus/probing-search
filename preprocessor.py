@@ -124,8 +124,7 @@ class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
     def __init__(self, tokenizer_name, single_span: bool):
         super().__init__(single_span)
         self.tokenizer = BertTokenizer.from_pretrained(tokenizer_name)
-        spacy.cli.download('en_core_web_sm-2.1.0', direct=True)
-        self.spacy_tokenizer = spacy.load('en_core_web_sm').tokenizer
+        self.spacy_tokenizer = self._get_spacy_tokenizer()
 
     def preprocess(self, input_text, spans=None, labels=None):
         """
@@ -193,3 +192,11 @@ class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
 
         batch_enc = self.tokenizer.pad(batch_enc, return_tensors='pt')
         return batch_enc
+
+    @staticmethod
+    def _get_spacy_tokenizer():
+        if not spacy.util.is_package('en_core_web_sm'):
+            spacy.cli.download('en_core_web_sm-2.1.0', direct=True)
+
+        import en_core_web_sm
+        return en_core_web_sm.load().tokenizer
