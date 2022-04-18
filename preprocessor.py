@@ -153,7 +153,7 @@ class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
         """
 
         query, passage = original_text.split(' [SEP] ')
-        vanilla_tokens = [str(token) for token in self.spacy_tokenizer(query + ' ' + passage)]
+        vanilla_tokens = [token.text_with_ws for token in self.spacy_tokenizer(query + ' ' + passage)]
 
         # everything left to the span
         text_left_spans = [' '.join(vanilla_tokens[:a]) for a, _ in spans]
