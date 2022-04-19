@@ -84,7 +84,7 @@ class BERTPreprocessor(EdgeProbingPreprocessor):
         transformers.logging.set_verbosity_error()
         query, passage = input_text.split(' [SEP] ')
 
-        labels = torch.tensor(labels)
+        labels = torch.as_tensor(labels)
         if self.bucketize_labels:
             labels = self._bucketize_labels(labels)
 
