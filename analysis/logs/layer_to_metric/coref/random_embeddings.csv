@@ -1,0 +1,2 @@
+"Name","State","Runtime","Tags","model/subject_model/model_name","Created","model/pooler/layer_to_probe","mdl","compression","test/accuracy","test/f1score"
+"mild-haze-1032","finished","17285","layer:0, msm_coref","random-embeddings","2022-04-18T19:12:34.000Z","0","61453.203125","2.644972085952759","0.9267202019691468","0.9267188310623168"

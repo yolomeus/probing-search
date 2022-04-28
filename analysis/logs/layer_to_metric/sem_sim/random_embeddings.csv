@@ -1,0 +1,2 @@
+"Name","State","Runtime","Tags","model/subject_model/model_name","Created","model/pooler/layer_to_probe","mdl","compression","test/accuracy","test/f1score"
+"cerulean-cosmos-1034","finished","4866","layer:0, msm_sem_sim","random-embeddings","2022-04-18T19:15:19.000Z","0","41375.5","3.211493015289306","0.6579999923706055","0.4405091404914856"

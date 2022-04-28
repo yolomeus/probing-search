@@ -1,0 +1,2 @@
+"Name","State","Runtime","Tags","model/subject_model/model_name","Created","model/pooler/layer_to_probe","mdl","compression","test/accuracy","test/f1score"
+"olive-silence-1036","finished","6924","fever_fact_check, layer:0","random-embeddings","2022-04-18T19:35:44.000Z","0","17068.12890625","2.132629871368408","0.6669231057167053","0.6466113924980164"
