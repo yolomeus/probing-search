@@ -1,2 +1,2 @@
-"Name","State","Runtime","Tags","End Time","model/subject_model/model_name","Created","model/pooler/layer_to_probe","val/accuracy/max","val/loss/min","test/accuracy","test/loss","mdl","compression"
-"wise-wind-650","finished","2914","layer:0, msm_term_freq","2022-01-26T02:17:55.000Z","random-embeddings","2022-01-26T01:29:21.000Z","0","0.6326000094413757","0.8160068392753601","0.6281999945640564","0.8194037079811096","35118.25","3.783705711364746"
+"Name","State","Runtime","Tags","model/subject_model/model_name","Created","model/pooler/layer_to_probe","mdl","compression","test/accuracy","test/f1score"
+"wise-wind-650","finished","2914","layer:0, msm_term_freq","random-embeddings","2022-01-26T01:29:21.000Z","0","35118.25","3.783705711364746","0.6281999945640564","0.17641207575798035"
