@@ -2,7 +2,7 @@
 
 ## Requirements
 
-The code is tested using python 3.9 in a virtual anaconda environment. All required packages can be found
+The code is tested using python 3.7 in a virtual anaconda environment. All required packages can be found
 in `environment.yml` and installed using [anaconda](anaconda.com/products/individual)
 like so:
 
