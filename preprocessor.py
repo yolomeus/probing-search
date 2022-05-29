@@ -168,7 +168,7 @@ class BERTRetokenizationPreprocessor(EdgeProbingPreprocessor):
 
         # shift by one to account for the [cls] token in the beginning
         new_spans = []
-        sep_pos = len(self.tokenizer(query, add_special_tokens=False))
+        sep_pos = len(self.tokenizer(query, add_special_tokens=False)['input_ids'])
 
         for a, b in zip(left_retokenized, span_retokenized):
             # shift by 1 for [cls]
