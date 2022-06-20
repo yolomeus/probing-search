@@ -13,7 +13,7 @@ val_file: data/msm/ner/validation.jsonl
 test_file: data/msm/ner/test.jsonl
 label_file: data/msm/ner/labels.txt
 
-num_train_samples: 20000
+num_train_samples: 40000
 num_test_samples: 20000
 
 num_classes: 18
