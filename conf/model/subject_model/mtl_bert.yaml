@@ -1,0 +1,4 @@
+_target_: model.subject.bert.BERTBaseFromLocalCheckpoint
+ckpt_path: ???
+model_name: mtl-bert
+num_layers: ${model.pooler.layer_to_probe}
