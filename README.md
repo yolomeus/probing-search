@@ -1,5 +1,7 @@
 # Probing Search
 
+This readme serves as a quickstart guide for running experiments. For further details on the overall project structure and intended use, please visit [**here**](https://github.com/yolomeus/pytorch-template).
+
 ## Requirements
 
 The code is tested using python 3.7 in a virtual anaconda environment. All required packages can be found
@@ -17,7 +19,7 @@ training. Same goes for wandb if you do not wish to use wandb for logging)
 
 This project uses [hydra](https://github.com/facebookresearch/hydra) for composing a training configuration from
 multiple sub-configuration modules. All configuration files can be found in `conf/` and its subdirectories, where
-`config.yaml` is the main configuration file and subdirectories contain possible sub-configurations.
+`config.yaml` is the main configuration file and subdirectories contain possible sub-configurations. 
 
 Even though yaml files define the default configuration and its structure, all training parameters can be overriden via
 command line arguments when running the `train.py` script and sub-configurations can be replaced allowing easy plug and
